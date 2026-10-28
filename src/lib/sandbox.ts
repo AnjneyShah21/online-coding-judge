@@ -25,6 +25,7 @@ interface ExecutionResult {
   runtimeMs: number;
   memoryKb: number;
   timedOut: boolean;
+  isCompileError?: boolean;
 }
 
 function getLanguageConfig(language: string) {
@@ -79,14 +80,16 @@ async function executeInSandbox(
           stdio: ["pipe", "pipe", "pipe"],
         });
       } catch (err: unknown) {
-        const execErr = err as { stderr?: Buffer };
+        const execErr = err as { stderr?: Buffer; message?: string };
+        const compileMsg = execErr.stderr ? execErr.stderr.toString() : execErr.message || "Compilation failed";
         return {
           stdout: "",
-          stderr: execErr.stderr?.toString() || "Compilation failed",
+          stderr: compileMsg,
           exitCode: 1,
           runtimeMs: 0,
           memoryKb: 0,
           timedOut: false,
+          isCompileError: true,
         };
       }
     }
@@ -247,18 +250,12 @@ export async function judgeSubmission(submissionId: string) {
 
     let tcVerdict = "accepted";
 
-    if (result.timedOut) {
+    if (result.isCompileError) {
+      tcVerdict = "compilation_error";
+    } else if (result.timedOut) {
       tcVerdict = "time_limit_exceeded";
     } else if (result.exitCode !== 0) {
-      // Check if it was a compilation error (already caught above)
-      if (
-        submission.language === "cpp" &&
-        result.stderr.includes("error:")
-      ) {
-        tcVerdict = "compilation_error";
-      } else {
-        tcVerdict = "runtime_error";
-      }
+      tcVerdict = "runtime_error";
     } else if (!compareOutput(tc.expected_output, result.stdout)) {
       tcVerdict = "wrong_answer";
     }
@@ -279,6 +276,11 @@ export async function judgeSubmission(submissionId: string) {
 
     if (tcVerdict !== "accepted" && overallVerdict === "accepted") {
       overallVerdict = tcVerdict;
+    }
+
+    // Short-circuit immediately on compilation error so all tests are not needlessly executed
+    if (result.isCompileError) {
+      break;
     }
   }
 
