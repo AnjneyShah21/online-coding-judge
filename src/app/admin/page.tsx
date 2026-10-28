@@ -4,6 +4,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
 import VerdictBadge from "@/components/VerdictBadge";
+import {
+  IconCode,
+  IconUser,
+  IconSparkles,
+  IconCheck,
+  IconClock,
+  IconShield,
+  IconChevronRight,
+  IconTerminal,
+  IconChart,
+} from "@/components/Icons";
 
 interface AdminStats {
   userCount: number;
@@ -50,8 +61,11 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="spinner spinner-lg" />
+      <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+        <AdminSidebar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+          <div className="spinner spinner-lg" />
+        </div>
       </div>
     );
   }
@@ -62,20 +76,39 @@ export default function AdminDashboardPage() {
       : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
-        <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <main className="main-with-sidebar" style={{ maxWidth: 1200, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 32,
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
           <div>
-            <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-              Admin Overview
+            <div className="hero-pill" style={{ marginBottom: 12 }}>
+              <span className="dot-indicator dot-indicator-emerald" />
+              <span>Supervisor Control Plane</span>
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+              System Telemetry & Supercluster
             </h1>
-            <p className="page-subtitle">
-              Monitor submissions, publish challenges, and supervise platform execution.
+            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+              Real-time judge telemetry, kernel sandbox execution, and system-wide submissions.
             </p>
           </div>
-          <Link href="/admin/problems/new" className="btn btn-admin">
-            ➕ Create New Problem
+          <Link
+            href="/admin/problems/new"
+            className="btn btn-primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 18px", borderRadius: 8 }}
+          >
+            <IconCode size={15} />
+            <span>Publish Problem</span>
           </Link>
         </div>
 
@@ -83,117 +116,155 @@ export default function AdminDashboardPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 20,
-            marginBottom: 36,
+            gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+            gap: 16,
+            marginBottom: 32,
           }}
         >
-          <div className="stat-card" style={{ background: "rgba(25, 17, 46, 0.6)", borderColor: "rgba(139, 92, 246, 0.2)" }}>
-            <div className="stat-icon" style={{ background: "rgba(139, 92, 246, 0.2)", color: "#c084fc" }}>
-              📝
+          <div className="kokonut-card-interactive" style={{ padding: "20px 22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+                Active Challenges
+              </span>
+              <div style={{ color: "#38bdf8" }}>
+                <IconCode size={18} />
+              </div>
             </div>
-            <div className="stat-value" style={{ color: "#f3e8ff" }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
               {stats?.problemCount || 0}
             </div>
-            <div className="stat-label">Published Problems</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontFamily: "var(--font-mono, monospace)" }}>
+              Isolated across language tracks
+            </div>
           </div>
 
-          <div className="stat-card" style={{ background: "rgba(25, 17, 46, 0.6)", borderColor: "rgba(139, 92, 246, 0.2)" }}>
-            <div className="stat-icon" style={{ background: "rgba(79, 143, 255, 0.2)", color: "#60a5fa" }}>
-              👥
+          <div className="kokonut-card-interactive" style={{ padding: "20px 22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+                Registered Developers
+              </span>
+              <div style={{ color: "#a855f7" }}>
+                <IconUser size={18} />
+              </div>
             </div>
-            <div className="stat-value" style={{ color: "#f3e8ff" }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
               {stats?.userCount || 0}
             </div>
-            <div className="stat-label">Registered Users</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontFamily: "var(--font-mono, monospace)" }}>
+              Authenticated players & admins
+            </div>
           </div>
 
-          <div className="stat-card" style={{ background: "rgba(25, 17, 46, 0.6)", borderColor: "rgba(139, 92, 246, 0.2)" }}>
-            <div className="stat-icon" style={{ background: "rgba(245, 158, 11, 0.2)", color: "#fbbf24" }}>
-              ⚡
+          <div className="kokonut-card-interactive" style={{ padding: "20px 22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+                Total Submissions
+              </span>
+              <div style={{ color: "#fbbf24" }}>
+                <IconSparkles size={18} />
+              </div>
             </div>
-            <div className="stat-value" style={{ color: "#f3e8ff" }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
               {stats?.submissionCount || 0}
             </div>
-            <div className="stat-label">Total Submissions</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontFamily: "var(--font-mono, monospace)" }}>
+              Sandboxed executions completed
+            </div>
           </div>
 
-          <div className="stat-card" style={{ background: "rgba(25, 17, 46, 0.6)", borderColor: "rgba(139, 92, 246, 0.2)" }}>
-            <div className="stat-icon" style={{ background: "rgba(34, 197, 94, 0.2)", color: "#4ade80" }}>
-              🎯
+          <div className="kokonut-card-interactive" style={{ padding: "20px 22px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+                Acceptance Rate
+              </span>
+              <div style={{ color: "#34d399" }}>
+                <IconCheck size={18} />
+              </div>
             </div>
-            <div className="stat-value" style={{ color: "#4ade80" }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#34d399", letterSpacing: "-0.02em" }}>
               {acceptanceRate}%
             </div>
-            <div className="stat-label">Acceptance Rate</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontFamily: "var(--font-mono, monospace)" }}>
+              {stats?.acceptedCount || 0} accepted verdicts
+            </div>
           </div>
         </div>
 
         {/* Quick Actions & Recent Activity */}
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, alignItems: "start" }}>
           {/* Recent Submissions */}
           <div
-            className="glass-card"
+            className="kokonut-card"
             style={{
               padding: 24,
-              background: "rgba(20, 14, 38, 0.8)",
-              borderColor: "rgba(139, 92, 246, 0.2)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#f3e8ff" }}>
-                Recent Submissions
-              </h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div>
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>
+                  Recent Judge Submissions
+                </h2>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                  Live feed of developer code runs
+                </p>
+              </div>
               <Link
                 href="/admin/submissions"
-                style={{ fontSize: 13, color: "#c084fc", textDecoration: "none" }}
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: 11, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                View all →
+                <span>View All</span>
+                <IconChevronRight size={12} />
               </Link>
             </div>
 
             {(!stats?.recentSubmissions || stats.recentSubmissions.length === 0) ? (
-              <div className="empty-state">
-                <div className="empty-icon">📂</div>
-                <h3>No Submissions Yet</h3>
-                <p>User submissions will appear here live as they code.</p>
+              <div style={{ padding: "48px 0", textAlign: "center" }}>
+                <p style={{ color: "var(--text-muted)", fontSize: 13 }}>No submissions logged yet.</p>
               </div>
             ) : (
-              <div className="table-container">
+              <div className="table-container" style={{ margin: 0 }}>
                 <table>
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Problem</th>
-                      <th>Language</th>
-                      <th>Verdict</th>
-                      <th>Runtime</th>
-                      <th>Time</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>User</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Problem</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Lang</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Verdict</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Runtime</th>
+                      <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Time</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.recentSubmissions.map((sub) => (
                       <tr key={sub.id}>
-                        <td style={{ fontWeight: 600, color: "#f3e8ff" }}>{sub.username}</td>
-                        <td>{sub.problem_title}</td>
+                        <td style={{ fontWeight: 600, color: "#ffffff", fontSize: 13 }}>{sub.username}</td>
+                        <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>{sub.problem_title}</td>
                         <td>
                           <span
                             style={{
                               padding: "2px 8px",
                               borderRadius: 4,
                               fontSize: 11,
-                              background: "rgba(255,255,255,0.06)",
+                              fontFamily: "var(--font-mono, monospace)",
+                              background: "rgba(255, 255, 255, 0.05)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              color: "var(--text-secondary)",
                             }}
                           >
-                            {sub.language}
+                            {sub.language.toUpperCase()}
                           </span>
                         </td>
                         <td>
                           <VerdictBadge verdict={sub.verdict} />
                         </td>
-                        <td className="mono">{sub.runtime_ms != null ? `${sub.runtime_ms} ms` : "—"}</td>
-                        <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                          {new Date(sub.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <td className="mono" style={{ fontSize: 12 }}>
+                          {sub.runtime_ms != null ? `${sub.runtime_ms}ms` : "—"}
+                        </td>
+                        <td style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                          {new Date(sub.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </td>
                       </tr>
                     ))}
@@ -203,77 +274,91 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          {/* Admin Control Center */}
+          {/* Admin Control Center & Sandbox Status */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Quick Controls */}
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
-                padding: 24,
-                background: "rgba(20, 14, 38, 0.8)",
-                borderColor: "rgba(139, 92, 246, 0.2)",
+                padding: 22,
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-subtle)",
               }}
             >
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 12 }}>
-                ⚙️ Quick Controls
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+                Quick Operations
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <Link
                   href="/admin/problems/new"
                   className="btn btn-secondary"
-                  style={{ justifyContent: "flex-start", width: "100%" }}
+                  style={{ justifyContent: "space-between", width: "100%", padding: "10px 14px", fontSize: 13 }}
                 >
-                  📝 Publish New Problem
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <IconCode size={14} />
+                    <span>Publish Problem</span>
+                  </span>
+                  <IconChevronRight size={13} />
                 </Link>
                 <Link
                   href="/admin/problems"
                   className="btn btn-secondary"
-                  style={{ justifyContent: "flex-start", width: "100%" }}
+                  style={{ justifyContent: "space-between", width: "100%", padding: "10px 14px", fontSize: 13 }}
                 >
-                  📂 Manage Problem Test Cases
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <IconTerminal size={14} />
+                    <span>Test Cases & Suites</span>
+                  </span>
+                  <IconChevronRight size={13} />
                 </Link>
                 <Link
                   href="/admin/submissions"
                   className="btn btn-secondary"
-                  style={{ justifyContent: "flex-start", width: "100%" }}
+                  style={{ justifyContent: "space-between", width: "100%", padding: "10px 14px", fontSize: 13 }}
                 >
-                  🔍 Inspect Execution Verdicts
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <IconChart size={14} />
+                    <span>Inspect Verdicts</span>
+                  </span>
+                  <IconChevronRight size={13} />
                 </Link>
               </div>
             </div>
 
+            {/* Sandbox Status */}
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
-                padding: 24,
-                background: "rgba(20, 14, 38, 0.8)",
-                borderColor: "rgba(139, 92, 246, 0.2)",
+                padding: 22,
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-subtle)",
               }}
             >
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 8 }}>
-                🛡️ Sandbox Status
-              </h3>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-                Kernel sandboxing active using bubblewrap (<code>bwrap</code>). Network unshared, memory capped, timeouts enforced.
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <IconShield size={16} style={{ color: "#34d399" }} />
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff" }}>
+                  Kernel Sandbox Status
+                </h3>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 14 }}>
+                Linux kernel sandboxing active using Bubblewrap (<code>bwrap</code>). Network unshared, memory capped, timeouts enforced.
               </p>
               <div
                 style={{
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
+                  padding: "6px 12px",
+                  borderRadius: 6,
+                  background: "rgba(16, 185, 129, 0.1)",
+                  border: "1px solid rgba(16, 185, 129, 0.2)",
                   fontSize: 12,
-                  color: "#4ade80",
+                  fontFamily: "var(--font-mono, monospace)",
+                  color: "#34d399",
                 }}
               >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "#4ade80",
-                    display: "inline-block",
-                  }}
-                />
-                bwrap sandbox isolated & ready
+                <span className="dot-indicator dot-indicator-emerald" />
+                <span>bwrap cluster ready</span>
               </div>
             </div>
           </div>

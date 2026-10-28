@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { getSession, requireAuth } from "@/lib/auth";
 import { toggleBookmark, getUserBookmarks, isProblemBookmarked } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ bookmarks: [], bookmarked: false });
+    }
     const { searchParams } = new URL(request.url);
     const problemId = searchParams.get("problem_id");
 
@@ -21,8 +24,8 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unauthorized";
-    return NextResponse.json({ error: message }, { status: 401 });
+    const message = error instanceof Error ? error.message : "Error fetching bookmarks";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

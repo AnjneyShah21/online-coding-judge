@@ -5,10 +5,14 @@ import {
   updateProblem,
   deleteProblem,
   getTestCasesForProblem,
+  getContestById,
+  getContestProblems,
+  isUserRegisteredForContest,
+  isUserContestEnded,
 } from "@/lib/db";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -20,9 +24,23 @@ export async function GET(
 
     const session = await getSession();
     const isAdmin = session?.role === "admin";
+    const contestId = request.nextUrl.searchParams.get("contest_id");
+    let isAvailableThroughContest = false;
+
+    if (contestId && session) {
+      const contest = getContestById(contestId);
+      const isAssignedProblem = getContestProblems(contestId).some((item) => item.problem_id === id);
+      const now = Date.now();
+      const isLive = contest && now >= new Date(contest.start_time).getTime() && now <= new Date(contest.end_time).getTime();
+      isAvailableThroughContest = Boolean(
+        contest && isAssignedProblem && isLive &&
+        isUserRegisteredForContest(contestId, session.userId) &&
+        !isUserContestEnded(contestId, session.userId)
+      );
+    }
 
     // Non-admins can only see published problems
-    if (!isAdmin && !problem.is_published) {
+    if (!isAdmin && !problem.is_published && !isAvailableThroughContest) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 

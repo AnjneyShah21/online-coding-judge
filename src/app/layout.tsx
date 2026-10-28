@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import InteractiveMesh from "@/components/InteractiveMesh";
 
 export const metadata: Metadata = {
   title: "AI Judge | Competitive Programming Platform",
@@ -15,7 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <InteractiveMesh />
+        <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+      </body>
     </html>
   );
 }

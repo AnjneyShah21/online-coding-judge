@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
+import { IconArrowLeft, IconSparkles, IconCheck, IconCode } from "@/components/Icons";
 
 interface TestCase {
   id: string;
@@ -218,81 +219,128 @@ function EditProblemContent() {
 
   if (loading || !problem) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="spinner spinner-lg" />
+      <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+        <AdminSidebar />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+          <div className="spinner spinner-lg" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
-        <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <Link
-              href="/admin/problems"
-              style={{ fontSize: 13, color: "#c084fc", textDecoration: "none", display: "inline-block", marginBottom: 8 }}
-            >
-              ← Back to Problems
-            </Link>
-            <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-              Edit Problem: {problem.title}
-            </h1>
-            <p className="page-subtitle">
-              Manage configuration, published status, and hidden evaluation test cases.
-            </p>
-          </div>
+      <main className="main-with-sidebar" style={{ maxWidth: 1100, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <Link
+            href="/admin/problems"
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 14,
+            }}
+          >
+            <IconArrowLeft size={13} />
+            <span>Back to Problem Registry</span>
+          </Link>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={() =>
-                setProblem((p) => p ? { ...p, is_published: p.is_published ? 0 : 1 } : null)
-              }
-              className={`badge ${problem.is_published ? "badge-accepted" : "badge-pending"}`}
-              style={{ cursor: "pointer", border: "none", padding: "8px 14px", fontSize: 13 }}
-            >
-              {problem.is_published ? "● Published (Live)" : "○ Draft (Hidden)"}
-            </button>
-            <button
-              onClick={handleProblemSave}
-              className="btn btn-admin"
-              disabled={saveLoading}
-            >
-              {saveLoading ? <span className="spinner" /> : "Save Changes"}
-            </button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+            <div>
+              <div className="hero-pill" style={{ marginBottom: 10 }}>
+                <span className="dot-indicator dot-indicator-emerald" />
+                <span>Test Suite & Constraint Tuning</span>
+              </div>
+              <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+                Edit Problem: {problem.title}
+              </h1>
+              <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                Manage statement, publish state, execution constraints, and hidden evaluation test suites.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() =>
+                  setProblem((p) => p ? { ...p, is_published: p.is_published ? 0 : 1 } : null)
+                }
+                className="btn btn-secondary btn-sm"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 12,
+                  borderColor: problem.is_published ? "rgba(16, 185, 129, 0.3)" : "rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                <span className={`dot-indicator ${problem.is_published ? "dot-indicator-emerald" : "dot-indicator-amber"}`} />
+                <span>{problem.is_published ? "Published (Live)" : "Draft (Hidden)"}</span>
+              </button>
+              <button
+                onClick={handleProblemSave}
+                className="btn btn-primary btn-sm"
+                disabled={saveLoading}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px" }}
+              >
+                {saveLoading ? <span className="spinner" /> : <span>Save Changes</span>}
+              </button>
+            </div>
           </div>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div
+            style={{
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: "rgba(244, 63, 94, 0.1)",
+              border: "1px solid rgba(244, 63, 94, 0.2)",
+              color: "#fb7185",
+              fontSize: 13,
+              marginBottom: 20,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         {successMsg && (
           <div
             style={{
-              padding: "10px 14px",
-              background: "rgba(34, 197, 94, 0.15)",
-              border: "1px solid rgba(34, 197, 94, 0.3)",
-              color: "#4ade80",
+              padding: "12px 16px",
               borderRadius: 8,
-              fontSize: 14,
-              marginBottom: 16,
+              background: "rgba(16, 185, 129, 0.1)",
+              border: "1px solid rgba(16, 185, 129, 0.2)",
+              color: "#34d399",
+              fontSize: 13,
+              marginBottom: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            ✓ {successMsg}
+            <IconCheck size={14} />
+            <span>{successMsg}</span>
           </div>
         )}
 
         {/* Problem Metadata Card */}
         <div
-          className="glass-card"
+          className="kokonut-card"
           style={{
             padding: 24,
-            background: "rgba(20, 14, 38, 0.8)",
-            borderColor: "rgba(139, 92, 246, 0.2)",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-subtle)",
             marginBottom: 24,
           }}
         >
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 16 }}>
-            Problem Configuration
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 18 }}>
+            Problem Configuration & Parameters
           </h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
@@ -335,7 +383,7 @@ function EditProblemContent() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 6 }}>
             <label className="label">Markdown Description</label>
             <textarea
               className="input textarea mono"
@@ -348,11 +396,11 @@ function EditProblemContent() {
 
         {/* Test Cases Section */}
         <div
-          className="glass-card"
+          className="kokonut-card"
           style={{
             padding: 24,
-            background: "rgba(20, 14, 38, 0.8)",
-            borderColor: "rgba(139, 92, 246, 0.2)",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border-subtle)",
             marginBottom: 24,
           }}
         >
@@ -361,44 +409,53 @@ function EditProblemContent() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 16,
+              marginBottom: 18,
+              flexWrap: "wrap",
+              gap: 12,
             }}
           >
             <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff" }}>
-                Test Cases ({testCases.length})
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>
+                Evaluation Test Suite ({testCases.length} cases)
               </h2>
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                Sample test cases are visible to users. Hidden test cases evaluate submissions in the sandbox.
+              <p style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                Public samples display in problem solver; hidden cases test sandbox accuracy.
               </p>
             </div>
 
             <button
               onClick={handleGenerateAITestCases}
-              className="btn btn-admin btn-sm"
+              className="btn btn-secondary btn-sm"
               style={{
-                background: "linear-gradient(135deg, #a855f7, #ec4899)",
-                boxShadow: "0 0 15px rgba(236, 72, 153, 0.3)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                borderColor: "rgba(168, 85, 247, 0.4)",
+                color: "#c084fc",
+                padding: "7px 14px",
               }}
             >
-              🤖 AI Test Case Generator
+              <IconSparkles size={14} />
+              <span>AI Edge-Case Generator</span>
             </button>
           </div>
 
           {/* Test cases table */}
           {testCases.length === 0 ? (
-            <div className="empty-state" style={{ padding: "30px 0" }}>
-              <p>No test cases configured yet. Add sample and hidden cases below or use the AI generator.</p>
+            <div style={{ padding: "36px 0", textAlign: "center" }}>
+              <p style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                No test cases configured yet. Add sample and hidden cases below or use the AI generator.
+              </p>
             </div>
           ) : (
-            <div className="table-container" style={{ marginBottom: 24 }}>
+            <div className="table-container" style={{ marginBottom: 20 }}>
               <table>
                 <thead>
                   <tr>
-                    <th>Type</th>
-                    <th>Input</th>
-                    <th>Expected Output</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Type</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Input Stream</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Expected Output</th>
+                    <th style={{ textAlign: "right", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -407,6 +464,7 @@ function EditProblemContent() {
                       <td>
                         <span
                           className={`badge ${tc.is_sample ? "badge-pending" : "badge-easy"}`}
+                          style={{ fontSize: 11 }}
                         >
                           {tc.is_sample ? `Sample #${idx + 1}` : `Hidden #${idx + 1}`}
                         </span>
@@ -417,7 +475,8 @@ function EditProblemContent() {
                           style={{
                             maxHeight: 60,
                             overflowY: "auto",
-                            background: "rgba(0,0,0,0.4)",
+                            background: "rgba(0,0,0,0.3)",
+                            border: "1px solid rgba(255, 255, 255, 0.05)",
                             padding: "4px 8px",
                             borderRadius: 6,
                             fontSize: 12,
@@ -432,7 +491,8 @@ function EditProblemContent() {
                           style={{
                             maxHeight: 60,
                             overflowY: "auto",
-                            background: "rgba(0,0,0,0.4)",
+                            background: "rgba(0,0,0,0.3)",
+                            border: "1px solid rgba(255, 255, 255, 0.05)",
                             padding: "4px 8px",
                             borderRadius: 6,
                             fontSize: 12,
@@ -445,7 +505,7 @@ function EditProblemContent() {
                         <button
                           onClick={() => handleDeleteTestCase(tc.id)}
                           className="btn btn-danger btn-sm"
-                          style={{ padding: "3px 8px", fontSize: 12 }}
+                          style={{ padding: "4px 10px", fontSize: 11 }}
                         >
                           Delete
                         </button>
@@ -460,18 +520,18 @@ function EditProblemContent() {
           {/* Add test case form */}
           <div
             style={{
-              padding: 16,
-              background: "rgba(10, 6, 20, 0.6)",
-              borderRadius: 10,
-              border: "1px dashed rgba(139, 92, 246, 0.3)",
+              padding: 18,
+              background: "rgba(255, 255, 255, 0.02)",
+              borderRadius: 8,
+              border: "1px dashed var(--border-subtle)",
             }}
           >
-            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#f3e8ff", marginBottom: 12 }}>
-              Add Manual Test Case
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
+              Add Manual Evaluation Case
             </h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               <div>
-                <label className="label">Input Data</label>
+                <label className="label">Input Data (Standard In)</label>
                 <textarea
                   className="input textarea mono"
                   rows={3}
@@ -481,7 +541,7 @@ function EditProblemContent() {
                 />
               </div>
               <div>
-                <label className="label">Expected Output</label>
+                <label className="label">Expected Output (Standard Out)</label>
                 <textarea
                   className="input textarea mono"
                   rows={3}
@@ -492,14 +552,14 @@ function EditProblemContent() {
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", color: "var(--text-secondary)" }}>
                 <input
                   type="checkbox"
                   checked={newTcSample}
                   onChange={(e) => setNewTcSample(e.target.checked)}
                 />
-                <span>Public Sample Test Case (shown on problem page)</span>
+                <span>Public Sample Test Case (visible to developers in problem solver)</span>
               </label>
 
               <button
@@ -507,8 +567,9 @@ function EditProblemContent() {
                 onClick={() => handleAddTestCase(newTcInput, newTcOutput, newTcSample)}
                 className="btn btn-secondary btn-sm"
                 disabled={addingTc || !newTcInput || !newTcOutput}
+                style={{ padding: "6px 14px", fontSize: 12 }}
               >
-                {addingTc ? <span className="spinner" /> : "➕ Add Test Case"}
+                {addingTc ? <span className="spinner" /> : "Append Test Case"}
               </button>
             </div>
           </div>
@@ -520,8 +581,8 @@ function EditProblemContent() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.8)",
-              backdropFilter: "blur(8px)",
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -530,38 +591,42 @@ function EditProblemContent() {
             }}
           >
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
                 width: "100%",
                 maxWidth: 800,
                 maxHeight: "85vh",
                 overflowY: "auto",
-                background: "#161028",
-                borderColor: "rgba(139, 92, 246, 0.4)",
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-default)",
                 padding: 28,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f3e8ff" }}>
-                    🤖 AI Test Case Generator
-                  </h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <IconSparkles size={16} style={{ color: "#a855f7" }} />
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff" }}>
+                      AI Test Case Generator
+                    </h2>
+                  </div>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    AI-analyzed edge cases designed to catch off-by-one, boundary, and memory pitfalls.
+                    AI-analyzed edge cases designed to detect boundary errors and integer overflow.
                   </p>
                 </div>
                 <button
                   onClick={() => setShowAiModal(false)}
                   className="btn btn-secondary btn-sm"
+                  style={{ fontSize: 12, padding: "5px 12px" }}
                 >
-                  ✕ Close
+                  Close
                 </button>
               </div>
 
               {aiLoading ? (
                 <div style={{ padding: "60px 0", textAlign: "center" }}>
                   <div className="spinner spinner-lg" style={{ margin: "0 auto 16px" }} />
-                  <p style={{ color: "#d8b4fe" }}>Analyzing problem requirements & generating edge cases...</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: 13 }}>Analyzing constraints & generating adversarial test cases...</p>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -570,9 +635,9 @@ function EditProblemContent() {
                       key={idx}
                       style={{
                         padding: 16,
-                        borderRadius: 10,
-                        background: "rgba(25, 17, 46, 0.8)",
-                        border: "1px solid rgba(139, 92, 246, 0.2)",
+                        borderRadius: 8,
+                        background: "rgba(255, 255, 255, 0.02)",
+                        border: "1px solid var(--border-subtle)",
                       }}
                     >
                       <div
@@ -580,30 +645,31 @@ function EditProblemContent() {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          marginBottom: 8,
+                          marginBottom: 10,
                         }}
                       >
-                        <span style={{ fontSize: 13, fontWeight: 600, color: "#c084fc" }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>
                           Case #{idx + 1}: {tc.description}
                         </span>
                         <button
                           onClick={() => handleAddTestCase(tc.input, tc.expected_output, false)}
-                          className="btn btn-admin btn-sm"
-                          style={{ padding: "4px 10px", fontSize: 12 }}
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: "4px 12px", fontSize: 11 }}
                         >
-                          ➕ Add to Test Suite
+                          Add to Suite
                         </button>
                       </div>
 
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                         <div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>
+                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4, fontFamily: "var(--font-mono, monospace)" }}>
                             INPUT:
                           </div>
                           <pre
                             className="mono"
                             style={{
-                              background: "#0a0714",
+                              background: "rgba(0,0,0,0.4)",
+                              border: "1px solid rgba(255, 255, 255, 0.05)",
                               padding: 8,
                               borderRadius: 6,
                               fontSize: 12,
@@ -615,13 +681,14 @@ function EditProblemContent() {
                           </pre>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>
+                          <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4, fontFamily: "var(--font-mono, monospace)" }}>
                             EXPECTED OUTPUT:
                           </div>
                           <pre
                             className="mono"
                             style={{
-                              background: "#0a0714",
+                              background: "rgba(0,0,0,0.4)",
+                              border: "1px solid rgba(255, 255, 255, 0.05)",
                               padding: 8,
                               borderRadius: 6,
                               fontSize: 12,

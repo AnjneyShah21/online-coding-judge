@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/AdminSidebar";
 import VerdictBadge from "@/components/VerdictBadge";
+import { IconCode, IconTerminal, IconCheck } from "@/components/Icons";
 
 interface Submission {
   id: string;
@@ -52,15 +53,19 @@ export default function AdminSubmissionsPage() {
   }, [router]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
-        <div className="page-header">
-          <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-            Platform Submissions
+      <main className="main-with-sidebar" style={{ maxWidth: 1200, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        <div style={{ marginBottom: 28 }}>
+          <div className="hero-pill" style={{ marginBottom: 12 }}>
+            <span className="dot-indicator dot-indicator-emerald" />
+            <span>Real-Time Execution Telemetry</span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+            Platform Submissions & Verdicts
           </h1>
-          <p className="page-subtitle">
-            Live real-time feed of all user code submissions running in isolated sandboxes.
+          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+            Live real-time feed of all user code submissions running in isolated bubblewrap sandboxes.
           </p>
         </div>
 
@@ -69,69 +74,73 @@ export default function AdminSubmissionsPage() {
             <div className="spinner spinner-lg" />
           </div>
         ) : submissions.length === 0 ? (
-          <div className="empty-state glass-card" style={{ padding: 60, background: "rgba(20, 14, 38, 0.8)" }}>
-            <div className="empty-icon">⚡</div>
-            <h3 style={{ color: "#f3e8ff" }}>No Submissions Found</h3>
-            <p style={{ color: "var(--text-muted)" }}>Submissions will stream here automatically.</p>
+          <div className="kokonut-card" style={{ padding: 60, textAlign: "center", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}>
+            <h3 style={{ color: "#ffffff", fontSize: 16, fontWeight: 700, marginBottom: 6 }}>No Submissions Found</h3>
+            <p style={{ color: "var(--text-muted)", fontSize: 13 }}>Submissions will stream here automatically as developers submit solutions.</p>
           </div>
         ) : (
           <div
-            className="table-container glass-card"
-            style={{ background: "rgba(20, 14, 38, 0.8)", borderColor: "rgba(139, 92, 246, 0.2)" }}
+            className="kokonut-card"
+            style={{ padding: 24, background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
           >
-            <table>
-              <thead>
-                <tr>
-                  <th>Submission ID</th>
-                  <th>User</th>
-                  <th>Problem</th>
-                  <th>Language</th>
-                  <th>Verdict</th>
-                  <th>Runtime</th>
-                  <th>Submitted At</th>
-                  <th style={{ textAlign: "right" }}>Code</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submissions.map((sub) => (
-                  <tr key={sub.id}>
-                    <td className="mono" style={{ fontSize: 12 }}>
-                      {sub.id.substring(0, 8)}...
-                    </td>
-                    <td style={{ fontWeight: 600, color: "#f3e8ff" }}>{sub.username}</td>
-                    <td>{sub.problem_title}</td>
-                    <td>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 4,
-                          fontSize: 11,
-                          background: "rgba(255,255,255,0.06)",
-                        }}
-                      >
-                        {sub.language}
-                      </span>
-                    </td>
-                    <td>
-                      <VerdictBadge verdict={sub.verdict} />
-                    </td>
-                    <td className="mono">{sub.runtime_ms != null ? `${sub.runtime_ms} ms` : "—"}</td>
-                    <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                      {new Date(sub.created_at).toLocaleString()}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        onClick={() => setSelectedSub(sub)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: "3px 10px", fontSize: 12 }}
-                      >
-                        Inspect
-                      </button>
-                    </td>
+            <div className="table-container" style={{ margin: 0 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Submission ID</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>User</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Problem</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Language</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Verdict</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Runtime</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Submitted At</th>
+                    <th style={{ textAlign: "right", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {submissions.map((sub) => (
+                    <tr key={sub.id}>
+                      <td className="mono" style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        {sub.id.substring(0, 8)}...
+                      </td>
+                      <td style={{ fontWeight: 600, color: "#ffffff", fontSize: 13 }}>{sub.username}</td>
+                      <td style={{ fontSize: 13, color: "var(--text-secondary)" }}>{sub.problem_title}</td>
+                      <td>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontFamily: "var(--font-mono, monospace)",
+                            background: "rgba(255, 255, 255, 0.05)",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {sub.language.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <VerdictBadge verdict={sub.verdict} />
+                      </td>
+                      <td className="mono" style={{ fontSize: 12 }}>{sub.runtime_ms != null ? `${sub.runtime_ms}ms` : "—"}</td>
+                      <td style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                        {new Date(sub.created_at).toLocaleString()}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          onClick={() => setSelectedSub(sub)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: "3px 10px", fontSize: 11 }}
+                        >
+                          Inspect Code
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -141,8 +150,8 @@ export default function AdminSubmissionsPage() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.8)",
-              backdropFilter: "blur(8px)",
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -151,26 +160,26 @@ export default function AdminSubmissionsPage() {
             }}
           >
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
                 width: "100%",
-                maxWidth: 800,
+                maxWidth: 820,
                 maxHeight: "85vh",
                 overflowY: "auto",
-                background: "#161028",
-                borderColor: "rgba(139, 92, 246, 0.4)",
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-default)",
                 padding: 28,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
                 <div>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: "#f3e8ff" }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>
                     Submission: {selectedSub.id}
                   </h2>
-                  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                    <span>By: <strong>{selectedSub.username}</strong></span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 13, color: "var(--text-secondary)" }}>
+                    <span>Developer: <strong style={{ color: "#ffffff" }}>{selectedSub.username}</strong></span>
                     <span>•</span>
-                    <span>Problem: <strong>{selectedSub.problem_title}</strong></span>
+                    <span>Problem: <strong style={{ color: "#ffffff" }}>{selectedSub.problem_title}</strong></span>
                     <span>•</span>
                     <VerdictBadge verdict={selectedSub.verdict} />
                   </div>
@@ -178,39 +187,41 @@ export default function AdminSubmissionsPage() {
                 <button
                   onClick={() => setSelectedSub(null)}
                   className="btn btn-secondary btn-sm"
+                  style={{ fontSize: 12, padding: "5px 12px" }}
                 >
-                  ✕ Close
+                  Close
                 </button>
               </div>
 
               {selectedSub.error_message && (
                 <div
                   style={{
-                    padding: 12,
-                    background: "rgba(239, 68, 68, 0.15)",
-                    border: "1px solid rgba(239, 68, 68, 0.3)",
-                    color: "#f87171",
+                    padding: 14,
+                    background: "rgba(244, 63, 94, 0.1)",
+                    border: "1px solid rgba(244, 63, 94, 0.2)",
+                    color: "#fb7185",
                     borderRadius: 8,
                     fontSize: 13,
-                    marginBottom: 16,
+                    marginBottom: 18,
                   }}
                 >
-                  <strong>Execution Error:</strong>
-                  <pre className="mono" style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>
+                  <strong style={{ display: "block", marginBottom: 4 }}>Execution Error / Diagnostic Output:</strong>
+                  <pre className="mono" style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 12 }}>
                     {selectedSub.error_message}
                   </pre>
                 </div>
               )}
 
               <div>
-                <label className="label" style={{ color: "#d8b4fe" }}>
-                  Submitted Source Code ({selectedSub.language})
+                <label className="label" style={{ color: "var(--text-secondary)", marginBottom: 8, display: "block" }}>
+                  Submitted Source Code ({selectedSub.language.toUpperCase()})
                 </label>
                 <pre
                   className="mono"
                   style={{
                     padding: 16,
-                    background: "#0a0714",
+                    background: "rgba(0, 0, 0, 0.4)",
+                    border: "1px solid rgba(255, 255, 255, 0.05)",
                     borderRadius: 8,
                     fontSize: 13,
                     overflowX: "auto",

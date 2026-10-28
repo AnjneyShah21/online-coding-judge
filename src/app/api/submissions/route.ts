@@ -7,6 +7,10 @@ import {
   getAllSubmissions,
   getSubmissionById,
   getResultsForSubmission,
+  getContestById,
+  getContestProblems,
+  isUserRegisteredForContest,
+  isUserContestEnded,
 } from "@/lib/db";
 import { judgeSubmission } from "@/lib/sandbox";
 
@@ -78,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { problem_id, code, language } = body;
+    const { problem_id, code, language, contest_id } = body;
 
     if (!problem_id || !code || !language) {
       return NextResponse.json(
@@ -87,11 +91,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["python", "cpp", "javascript"].includes(language)) {
+    if (!["python", "cpp", "java", "javascript"].includes(language)) {
       return NextResponse.json(
         { error: "Unsupported language" },
         { status: 400 }
       );
+    }
+
+    if (contest_id) {
+      const contest = getContestById(contest_id);
+      const isAssignedProblem = getContestProblems(contest_id).some((item) => item.problem_id === problem_id);
+      const now = Date.now();
+      const isLive = contest && now >= new Date(contest.start_time).getTime() && now <= new Date(contest.end_time).getTime();
+      const canSubmit = Boolean(
+        contest && isAssignedProblem && isLive &&
+        isUserRegisteredForContest(contest_id, session.userId) &&
+        !isUserContestEnded(contest_id, session.userId)
+      );
+
+      if (!canSubmit) {
+        return NextResponse.json(
+          { error: "This contest problem is not available for submission in your current contest session." },
+          { status: 403 }
+        );
+      }
     }
 
     const id = uuidv4();
@@ -108,7 +131,7 @@ export async function POST(request: NextRequest) {
       console.error(`Error judging submission ${id}:`, err);
     });
 
-    return NextResponse.json({ success: true, id });
+    return NextResponse.json({ success: true, id, submission_id: id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     if (message === "Unauthorized") {

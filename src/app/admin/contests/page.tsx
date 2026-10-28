@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/AdminSidebar";
+import { IconTrophy, IconClock, IconCheck, IconChevronRight } from "@/components/Icons";
 
 interface Problem {
   id: string;
@@ -37,6 +38,14 @@ export default function AdminContestsPage() {
   const [endTime, setEndTime] = useState("");
   const [selectedProblemIds, setSelectedProblemIds] = useState<string[]>([]);
   const [problemScores, setProblemScores] = useState<Record<string, number>>({});
+
+  // Adjust Schedule & Duration Modal State
+  const [editingContest, setEditingContest] = useState<Contest | null>(null);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [timeModalLoading, setTimeModalLoading] = useState(false);
+  const [timeModalError, setTimeModalError] = useState("");
 
   const fetchData = async () => {
     try {
@@ -160,6 +169,157 @@ export default function AdminContestsPage() {
     }
   };
 
+  const handleTogglePublish = async (id: string, currentPublished: number) => {
+    try {
+      const res = await fetch("/api/contests", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          is_published: currentPublished ? 0 : 1,
+        }),
+      });
+      if (res.ok) {
+        setContests(
+          contests.map((c) => (c.id === id ? { ...c, is_published: currentPublished ? 0 : 1 } : c))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to toggle publish status:", err);
+    }
+  };
+
+  const handleOpenTimeModal = (contest: Contest) => {
+    setEditingContest(contest);
+    // Format to local datetime-local format
+    const s = new Date(contest.start_time);
+    const e = new Date(contest.end_time);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const toLocalISO = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+    setEditStartTime(toLocalISO(s));
+    setEditEndTime(toLocalISO(e));
+    setTimeModalError("");
+    setShowTimeModal(true);
+  };
+
+  const handleQuickExtend = async (contestId: string, additionalMinutes: number) => {
+    const contest = contests.find((c) => c.id === contestId);
+    if (!contest) return;
+
+    const currentEnd = new Date(contest.end_time).getTime();
+    const now = Date.now();
+    // If contest has already passed end time, extend from now; otherwise from current end time
+    const baseTime = currentEnd > now ? currentEnd : now;
+    const newEndTime = new Date(baseTime + additionalMinutes * 60 * 1000).toISOString();
+
+    try {
+      const res = await fetch("/api/contests", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: contestId,
+          end_time: newEndTime,
+        }),
+      });
+      if (res.ok) {
+        setContests((prev) =>
+          prev.map((c) => (c.id === contestId ? { ...c, end_time: newEndTime } : c))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to extend contest duration:", err);
+    }
+  };
+
+  const handleStartImmediately = async (contest: Contest) => {
+    const now = new Date();
+    const originalDurationMs = Math.max(
+      new Date(contest.end_time).getTime() - new Date(contest.start_time).getTime(),
+      60 * 60 * 1000
+    );
+    const newStartTime = now.toISOString();
+    const newEndTime = new Date(now.getTime() + originalDurationMs).toISOString();
+
+    try {
+      const res = await fetch("/api/contests", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: contest.id,
+          start_time: newStartTime,
+          end_time: newEndTime,
+        }),
+      });
+      if (res.ok) {
+        setContests((prev) =>
+          prev.map((c) =>
+            c.id === contest.id ? { ...c, start_time: newStartTime, end_time: newEndTime } : c
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to start contest immediately:", err);
+    }
+  };
+
+  const handleSaveTimeModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContest) return;
+
+    if (!editStartTime || !editEndTime) {
+      setTimeModalError("Both start and end time are required.");
+      return;
+    }
+
+    const s = new Date(editStartTime).getTime();
+    const eTime = new Date(editEndTime).getTime();
+    if (eTime <= s) {
+      setTimeModalError("Contest end time must be strictly after start time.");
+      return;
+    }
+
+    setTimeModalLoading(true);
+    setTimeModalError("");
+
+    try {
+      const res = await fetch("/api/contests", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingContest.id,
+          start_time: new Date(editStartTime).toISOString(),
+          end_time: new Date(editEndTime).toISOString(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setTimeModalError(data.error || "Failed to update contest timing");
+        return;
+      }
+
+      setContests((prev) =>
+        prev.map((c) =>
+          c.id === editingContest.id
+            ? {
+                ...c,
+                start_time: new Date(editStartTime).toISOString(),
+                end_time: new Date(editEndTime).toISOString(),
+              }
+            : c
+        )
+      );
+      setShowTimeModal(false);
+      setEditingContest(null);
+    } catch {
+      setTimeModalError("Network error saving contest time");
+    } finally {
+      setTimeModalLoading(false);
+    }
+  };
+
   const getContestStatus = (start: string, end: string) => {
     const now = new Date().getTime();
     const s = new Date(start).getTime();
@@ -175,51 +335,58 @@ export default function AdminContestsPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
 
-      <main className="main-with-sidebar">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+      <main className="main-with-sidebar" style={{ maxWidth: 1200, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 className="page-title" style={{ color: "#f3e8ff", display: "flex", alignItems: "center", gap: 10 }}>
-              <span>🏆</span> Weekly Contests Management
+            <div className="hero-pill" style={{ marginBottom: 12 }}>
+              <span className="dot-indicator dot-indicator-amber" />
+              <span>Contest Tournament Operations</span>
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+              Weekly Contests Management
             </h1>
-            <p className="page-subtitle">
-              Schedule competitive coding contests, assign score-weighted problems, and inspect live participant rankings.
+            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+              Schedule competitive coding tournaments, attach score-weighted problems, and supervise real-time leaderboards.
             </p>
           </div>
 
           <button
             onClick={handleOpenCreateModal}
-            className="btn btn-admin"
-            style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: 8 }}
+            className="btn btn-primary"
+            style={{ padding: "9px 18px", display: "inline-flex", alignItems: "center", gap: 8, borderRadius: 8 }}
           >
-            <span>➕</span> Schedule Weekly Contest
+            <IconTrophy size={15} />
+            <span>Schedule Weekly Contest</span>
           </button>
         </div>
 
         {loading ? (
           <div style={{ padding: "80px 0", textAlign: "center" }}>
             <div className="spinner spinner-lg" style={{ margin: "0 auto 16px" }} />
-            <p style={{ color: "#a855f7" }}>Loading contest schedules...</p>
+            <p style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading tournament schedules...</p>
           </div>
         ) : contests.length === 0 ? (
           <div
-            className="glass-card"
+            className="kokonut-card"
             style={{
               padding: 60,
               textAlign: "center",
-              background: "rgba(20, 14, 38, 0.6)",
-              borderColor: "rgba(139, 92, 246, 0.2)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
             }}
           >
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
-            <h3 style={{ fontSize: 20, color: "#f3e8ff", marginBottom: 8 }}>No Contests Scheduled Yet</h3>
-            <p style={{ color: "var(--text-muted)", maxWidth: 460, margin: "0 auto 24px" }}>
+            <div style={{ color: "#fbbf24", marginBottom: 16, display: "flex", justifyContent: "center" }}>
+              <IconTrophy size={36} />
+            </div>
+            <h3 style={{ fontSize: 18, color: "#ffffff", fontWeight: 700, marginBottom: 8 }}>No Contests Scheduled Yet</h3>
+            <p style={{ color: "var(--text-muted)", maxWidth: 460, margin: "0 auto 24px", fontSize: 13 }}>
               Weekly contests allow candidates to compete against time with strict sandboxed execution and real-time leaderboards.
             </p>
-            <button onClick={handleOpenCreateModal} className="btn btn-admin">
-              Create First Contest
+            <button onClick={handleOpenCreateModal} className="btn btn-primary">
+              Schedule First Contest
             </button>
           </div>
         ) : (
@@ -229,21 +396,21 @@ export default function AdminContestsPage() {
               return (
                 <div
                   key={c.id}
-                  className="glass-card"
+                  className="kokonut-card"
                   style={{
                     padding: 24,
-                    background: "rgba(20, 14, 38, 0.8)",
-                    border: "1px solid rgba(139, 92, 246, 0.2)",
-                    borderRadius: 14,
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border-subtle)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     gap: 20,
+                    flexWrap: "wrap",
                   }}
                 >
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 280 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#f3e8ff", margin: 0 }}>
+                      <h2 style={{ fontSize: 17, fontWeight: 700, color: "#ffffff", margin: 0 }}>
                         {c.title}
                       </h2>
                       <span
@@ -254,41 +421,103 @@ export default function AdminContestsPage() {
                           borderRadius: 20,
                           background: status.bg,
                           color: status.color,
+                          fontFamily: "var(--font-mono, monospace)",
                         }}
                       >
                         {status.label}
                       </span>
                     </div>
 
-                    <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 12px", lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 12px", lineHeight: 1.5 }}>
                       {c.description || "No description provided."}
                     </p>
 
-                    <div style={{ display: "flex", gap: 20, fontSize: 12, color: "var(--text-secondary)", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 18, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap", fontFamily: "var(--font-mono, monospace)" }}>
                       <span>
-                        📅 <strong>Start:</strong> {new Date(c.start_time).toLocaleString()}
+                        <strong style={{ color: "var(--text-secondary)" }}>Start:</strong> {new Date(c.start_time).toLocaleString()}
                       </span>
                       <span>
-                        🏁 <strong>End:</strong> {new Date(c.end_time).toLocaleString()}
+                        <strong style={{ color: "var(--text-secondary)" }}>End:</strong> {new Date(c.end_time).toLocaleString()}
                       </span>
                       <span>
-                        📝 <strong>Problems:</strong> {c.problem_count || 0}
+                        <strong style={{ color: "var(--text-secondary)" }}>Problems:</strong> {c.problem_count || 0}
                       </span>
                       <span>
-                        👥 <strong>Registered:</strong> {c.participant_count || 0}
+                        <strong style={{ color: "var(--text-secondary)" }}>Registered:</strong> {c.participant_count || 0}
                       </span>
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    {/* Start Now button for upcoming contests */}
+                    {status.label === "Upcoming" && (
+                      <button
+                        onClick={() => handleStartImmediately(c)}
+                        className="btn btn-sm"
+                        style={{
+                          background: "rgba(16, 185, 129, 0.15)",
+                          border: "1px solid rgba(16, 185, 129, 0.35)",
+                          color: "#34d399",
+                          fontSize: 12,
+                          padding: "5px 12px",
+                        }}
+                        title="Start this tournament immediately with current duration"
+                      >
+                        Start Now
+                      </button>
+                    )}
+
+                    {/* Quick duration extension chips for live contests */}
+                    {status.label === "● LIVE NOW" && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <button
+                          onClick={() => handleQuickExtend(c.id, 15)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: 11, padding: "4px 8px", color: "#a5b4fc" }}
+                          title="Extend contest by 15 minutes"
+                        >
+                          +15m
+                        </button>
+                        <button
+                          onClick={() => handleQuickExtend(c.id, 30)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: 11, padding: "4px 8px", color: "#a5b4fc" }}
+                          title="Extend contest by 30 minutes"
+                        >
+                          +30m
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Set Schedule & Timing Modal Trigger */}
+                    <button
+                      onClick={() => handleOpenTimeModal(c)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: 12, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 5 }}
+                    >
+                      <IconClock size={13} />
+                      <span>Set Timing</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleTogglePublish(c.id, c.is_published)}
+                      className={`btn btn-sm ${c.is_published ? "btn-secondary" : "btn-primary"}`}
+                      style={{ fontSize: 12, padding: "5px 12px" }}
+                      title={c.is_published ? "Make contest private to creator only" : "Make contest public to all players"}
+                    >
+                      {c.is_published ? "Unpublish" : "Publish Live"}
+                    </button>
+
                     <a
                       href={`/contests`}
                       target="_blank"
                       className="btn btn-secondary btn-sm"
-                      style={{ fontSize: 12, borderColor: "rgba(139, 92, 246, 0.3)" }}
+                      style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                     >
-                      View Live ↗
+                      <span>Arena</span>
+                      <IconChevronRight size={12} />
                     </a>
+
                     <button
                       onClick={() => handleDeleteContest(c.id, c.title)}
                       className="btn btn-danger btn-sm"
@@ -309,8 +538,8 @@ export default function AdminContestsPage() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.8)",
-              backdropFilter: "blur(6px)",
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -319,35 +548,49 @@ export default function AdminContestsPage() {
             }}
           >
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
                 width: "100%",
                 maxWidth: 680,
                 maxHeight: "90vh",
                 overflowY: "auto",
-                background: "#140e26",
-                border: "1px solid rgba(139, 92, 246, 0.3)",
-                borderRadius: 18,
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-default)",
                 padding: 28,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f3e8ff", margin: 0 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", margin: 0 }}>
                   Schedule New Weekly Contest
                 </h2>
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
                   className="btn btn-secondary btn-sm"
+                  style={{ fontSize: 12, padding: "4px 10px" }}
                 >
-                  ✕
+                  Close
                 </button>
               </div>
 
-              {error && <div className="error-message" style={{ marginBottom: 16 }}>{error}</div>}
+              {error && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    background: "rgba(244, 63, 94, 0.1)",
+                    border: "1px solid rgba(244, 63, 94, 0.2)",
+                    color: "#fb7185",
+                    fontSize: 13,
+                    marginBottom: 16,
+                  }}
+                >
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleCreateContest}>
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="label">Contest Title</label>
                   <input
                     type="text"
@@ -359,7 +602,7 @@ export default function AdminContestsPage() {
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="label">Description / Instructions</label>
                   <textarea
                     className="input textarea"
@@ -405,9 +648,9 @@ export default function AdminContestsPage() {
                     style={{
                       maxHeight: 220,
                       overflowY: "auto",
-                      border: "1px solid rgba(139, 92, 246, 0.2)",
-                      borderRadius: 10,
-                      background: "rgba(10, 6, 20, 0.8)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: 8,
+                      background: "rgba(0, 0, 0, 0.3)",
                       padding: 10,
                       display: "flex",
                       flexDirection: "column",
@@ -424,9 +667,9 @@ export default function AdminContestsPage() {
                             alignItems: "center",
                             justifyContent: "space-between",
                             padding: "8px 12px",
-                            borderRadius: 8,
-                            background: isSelected ? "rgba(139, 92, 246, 0.15)" : "transparent",
-                            border: `1px solid ${isSelected ? "rgba(139, 92, 246, 0.4)" : "rgba(255,255,255,0.05)"}`,
+                            borderRadius: 6,
+                            background: isSelected ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                            border: `1px solid ${isSelected ? "rgba(59, 130, 246, 0.3)" : "rgba(255,255,255,0.04)"}`,
                           }}
                         >
                           <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flex: 1 }}>
@@ -435,7 +678,7 @@ export default function AdminContestsPage() {
                               checked={isSelected}
                               onChange={() => handleToggleProblem(prob.id)}
                             />
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#f3e8ff" }}>{prob.title}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#ffffff" }}>{prob.title}</span>
                             <span className={`badge badge-${prob.difficulty}`} style={{ fontSize: 10 }}>
                               {prob.difficulty}
                             </span>
@@ -471,10 +714,164 @@ export default function AdminContestsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-admin"
+                    className="btn btn-primary"
                     disabled={createLoading}
                   >
                     {createLoading ? <span className="spinner" /> : "Publish Contest"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Adjust Contest Timing & Duration Modal */}
+        {showTimeModal && editingContest && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(12px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+              padding: 20,
+            }}
+          >
+            <div
+              className="kokonut-card"
+              style={{
+                width: "100%",
+                maxWidth: 540,
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-default)",
+                padding: 28,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", margin: 0 }}>
+                    Adjust Contest Timing & Duration
+                  </h2>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                    {editingContest.title}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTimeModal(false)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: 12, padding: "4px 10px" }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {timeModalError && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    color: "#f87171",
+                    fontSize: 13,
+                    marginBottom: 16,
+                  }}
+                >
+                  {timeModalError}
+                </div>
+              )}
+
+              {/* Quick Duration Presets from Now */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", display: "block", marginBottom: 8, fontFamily: "var(--font-mono, monospace)" }}>
+                  Quick Start & Duration Presets (From Now)
+                </label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[30, 45, 60, 90, 120].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const pad = (n: number) => String(n).padStart(2, "0");
+                        const toLocalISO = (d: Date) =>
+                          `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                        const start = toLocalISO(now);
+                        const end = toLocalISO(new Date(now.getTime() + mins * 60 * 1000));
+                        setEditStartTime(start);
+                        setEditEndTime(end);
+                      }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: 12, padding: "5px 12px" }}
+                    >
+                      {mins} mins
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const pad = (n: number) => String(n).padStart(2, "0");
+                      const toLocalISO = (d: Date) =>
+                        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                      const curEnd = new Date(editEndTime).getTime();
+                      const base = isNaN(curEnd) || curEnd < Date.now() ? Date.now() : curEnd;
+                      setEditEndTime(toLocalISO(new Date(base + 30 * 60 * 1000)));
+                    }}
+                    className="btn btn-sm"
+                    style={{ fontSize: 12, padding: "5px 12px", background: "rgba(99, 102, 241, 0.15)", color: "#a5b4fc", border: "1px solid rgba(99, 102, 241, 0.3)" }}
+                  >
+                    +30m to End
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveTimeModal}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
+                      Start Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="input"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>
+                      End Time (Deadline)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="input"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTimeModal(false)}
+                    className="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={timeModalLoading}
+                  >
+                    {timeModalLoading ? <span className="spinner" /> : "Save New Schedule"}
                   </button>
                 </div>
               </form>
@@ -485,3 +882,4 @@ export default function AdminContestsPage() {
     </div>
   );
 }
+

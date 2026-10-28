@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
+import { IconCode, IconChevronRight, IconCheck, IconSearch } from "@/components/Icons";
 
 interface Problem {
   id: string;
@@ -90,48 +91,54 @@ export default function AdminProblemsPage() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
+      <main className="main-with-sidebar" style={{ maxWidth: 1200, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        {/* Header */}
         <div
-          className="page-header"
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            marginBottom: 28,
+            flexWrap: "wrap",
+            gap: 16,
           }}
         >
           <div>
-            <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-              Problem Management
+            <div className="hero-pill" style={{ marginBottom: 10 }}>
+              <span className="dot-indicator dot-indicator-emerald" />
+              <span>Language Isolation Console</span>
+            </div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", marginBottom: 4 }}>
+              Problem Registry
             </h1>
-            <p className="page-subtitle">
-              Create, configure, and manage test cases for language-specific programming challenges.
+            <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+              Manage isolated language tracks, execution constraints, and test suite payloads.
             </p>
           </div>
-          <Link href="/admin/problems/new" className="btn btn-admin">
-            ➕ Add New Problem
+          <Link
+            href="/admin/problems/new"
+            className="btn btn-primary"
+            style={{ fontSize: 12, padding: "8px 16px", borderRadius: 8 }}
+          >
+            Provision Problem
           </Link>
         </div>
 
         {/* Language Filter Tabs */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        <div className="tabs" style={{ marginBottom: 20, background: "#111116", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
           {[
-            { id: "all", label: "All Problems" },
-            { id: "cpp", label: "⚡ C++ Only" },
-            { id: "java", label: "☕ Java Only" },
-            { id: "python", label: "🐍 Python Only" },
-            { id: "javascript", label: "📜 JavaScript Only" },
+            { id: "all", label: "All Tracks" },
+            { id: "cpp", label: "C++ Track" },
+            { id: "java", label: "Java Track" },
+            { id: "python", label: "Python Track" },
+            { id: "javascript", label: "JavaScript Track" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setSelectedLang(tab.id)}
-              className="btn btn-sm"
-              style={{
-                background: selectedLang === tab.id ? "rgba(139, 92, 246, 0.4)" : "rgba(20, 14, 38, 0.8)",
-                color: selectedLang === tab.id ? "#f3e8ff" : "var(--text-muted)",
-                borderColor: selectedLang === tab.id ? "var(--accent-purple)" : "rgba(139, 92, 246, 0.2)",
-              }}
+              className={`tab ${selectedLang === tab.id ? "active" : ""}`}
             >
               {tab.label}
             </button>
@@ -140,34 +147,62 @@ export default function AdminProblemsPage() {
 
         {loading ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div className="spinner spinner-lg" />
+            <div className="spinner spinner-lg" style={{ margin: "0 auto 12px" }} />
+            <p style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading problem registry...</p>
           </div>
         ) : filteredProblems.length === 0 ? (
-          <div className="empty-state glass-card" style={{ padding: 60, background: "rgba(20, 14, 38, 0.8)" }}>
-            <div className="empty-icon">📝</div>
-            <h3 style={{ color: "#f3e8ff" }}>No Problems Found for Selected Filter</h3>
-            <p style={{ maxWidth: 400, margin: "8px auto 20px", color: "var(--text-muted)" }}>
-              Create a new problem specifically configured for this language track.
+          <div
+            className="kokonut-card"
+            style={{
+              padding: "56px 24px",
+              textAlign: "center",
+              border: "1px dashed rgba(255, 255, 255, 0.12)",
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: "rgba(255, 255, 255, 0.05)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px",
+                color: "var(--text-muted)",
+              }}
+            >
+              <IconCode size={20} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: "#ffffff" }}>
+              No Challenges Found for this Track
+            </h3>
+            <p style={{ maxWidth: 400, margin: "8px auto 20px", color: "var(--text-muted)", fontSize: 13 }}>
+              Provision a new problem specifically configured for this language track.
             </p>
-            <Link href="/admin/problems/new" className="btn btn-admin">
-              Create Problem
+            <Link href="/admin/problems/new" className="btn btn-primary btn-sm">
+              Provision Problem
             </Link>
           </div>
         ) : (
           <div
-            className="table-container glass-card"
-            style={{ background: "rgba(20, 14, 38, 0.8)", borderColor: "rgba(139, 92, 246, 0.2)" }}
+            className="table-container"
+            style={{
+              background: "#111116",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 12,
+            }}
           >
             <table>
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Language Track</th>
-                  <th>Difficulty</th>
-                  <th>Limits</th>
-                  <th>Status</th>
-                  <th>Tags</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th style={{ fontSize: 11 }}>Title & Slug</th>
+                  <th style={{ fontSize: 11 }}>Track Target</th>
+                  <th style={{ fontSize: 11 }}>Difficulty</th>
+                  <th style={{ fontSize: 11 }}>Telemetry Limits</th>
+                  <th style={{ fontSize: 11 }}>Status</th>
+                  <th style={{ fontSize: 11 }}>Tags</th>
+                  <th style={{ textAlign: "right", fontSize: 11 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -176,49 +211,51 @@ export default function AdminProblemsPage() {
                   return (
                     <tr key={p.id}>
                       <td>
-                        <div style={{ fontWeight: 600, color: "#f3e8ff" }}>{p.title}</div>
-                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{p.slug}</div>
+                        <div style={{ fontWeight: 600, color: "#f4f4f5", fontSize: 13 }}>{p.title}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                          {p.slug}
+                        </div>
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                           {targets.includes("cpp") && (
-                            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(139, 92, 246, 0.2)", color: "#c084fc" }}>
-                              ⚡ C++
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(168, 85, 247, 0.1)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.2)", fontFamily: "var(--font-mono, monospace)" }}>
+                              C++
                             </span>
                           )}
                           {targets.includes("java") && (
-                            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(239, 68, 68, 0.2)", color: "#f87171" }}>
-                              ☕ Java
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(239, 68, 68, 0.1)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.2)", fontFamily: "var(--font-mono, monospace)" }}>
+                              Java
                             </span>
                           )}
                           {targets.includes("python") && (
-                            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(79, 143, 255, 0.2)", color: "#60a5fa" }}>
-                              🐍 Python
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(96, 165, 250, 0.1)", color: "#60a5fa", border: "1px solid rgba(96, 165, 250, 0.2)", fontFamily: "var(--font-mono, monospace)" }}>
+                              Python
                             </span>
                           )}
                           {targets.includes("javascript") && (
-                            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(245, 158, 11, 0.2)", color: "#fbbf24" }}>
-                              📜 JS
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(245, 158, 11, 0.1)", color: "#fbbf24", border: "1px solid rgba(245, 158, 11, 0.2)", fontFamily: "var(--font-mono, monospace)" }}>
+                              JS
                             </span>
                           )}
                           {targets.length === 0 && (
-                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>All</span>
+                            <span style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>Multi</span>
                           )}
                         </div>
                       </td>
                       <td>
-                        <span className={`badge badge-${p.difficulty}`}>
+                        <span className={`badge badge-${p.difficulty}`} style={{ fontSize: 10, padding: "2px 6px" }}>
                           {p.difficulty}
                         </span>
                       </td>
-                      <td className="mono" style={{ fontSize: 12 }}>
+                      <td className="mono" style={{ fontSize: 11, color: "var(--text-secondary)" }}>
                         {p.time_limit_ms}ms / {p.memory_limit_mb}MB
                       </td>
                       <td>
                         <button
                           onClick={() => togglePublish(p)}
                           className={`badge ${p.is_published ? "badge-accepted" : "badge-pending"}`}
-                          style={{ cursor: "pointer", border: "none" }}
+                          style={{ cursor: "pointer", border: "none", fontSize: 10 }}
                         >
                           {p.is_published ? "Published" : "Draft"}
                         </button>
@@ -229,10 +266,13 @@ export default function AdminProblemsPage() {
                             <span
                               key={t}
                               style={{
-                                fontSize: 11,
+                                fontSize: 10,
                                 padding: "2px 6px",
                                 borderRadius: 4,
-                                background: "rgba(255,255,255,0.06)",
+                                background: "rgba(255, 255, 255, 0.04)",
+                                color: "var(--text-muted)",
+                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                fontFamily: "var(--font-mono, monospace)",
                               }}
                             >
                               {t}
@@ -241,18 +281,18 @@ export default function AdminProblemsPage() {
                         </div>
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                           <Link
                             href={`/admin/problems/${p.id}/edit`}
                             className="btn btn-secondary btn-sm"
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 11, padding: "4px 10px" }}
                           >
-                            Edit & Tests
+                            Edit
                           </Link>
                           <button
                             onClick={() => deleteProblem(p.id, p.title)}
                             className="btn btn-danger btn-sm"
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 11, padding: "4px 10px" }}
                           >
                             Delete
                           </button>

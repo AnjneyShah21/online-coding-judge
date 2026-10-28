@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/AdminSidebar";
 import VerdictBadge from "@/components/VerdictBadge";
+import { IconUser, IconSearch, IconShield, IconCheck, IconTerminal } from "@/components/Icons";
 
 interface UserProfile {
   id: string;
@@ -156,30 +157,46 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
-        <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <main className="main-with-sidebar" style={{ maxWidth: 1200, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-              Player Observation & Anti-Cheat
+            <div className="hero-pill" style={{ marginBottom: 12 }}>
+              <span className="dot-indicator dot-indicator-rose" />
+              <span>Player Moderation & Integrity</span>
+            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+              Player Accounts & Anti-Cheat
             </h1>
-            <p className="page-subtitle">
+            <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
               Inspect candidate activity patterns, review submitted code for plagiarism, and enforce account bans.
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ minWidth: 260 }}>
+          <div style={{ minWidth: 280 }}>
+            <div style={{ position: "relative" }}>
+              <span
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "var(--text-muted)",
+                  pointerEvents: "none",
+                }}
+              >
+                <IconSearch size={14} />
+              </span>
               <input
                 type="text"
                 className="input"
                 style={{
-                  background: "rgba(20, 14, 38, 0.8)",
-                  borderColor: "rgba(139, 92, 246, 0.3)",
-                  color: "#f3e8ff",
+                  paddingLeft: 36,
+                  fontSize: 13,
+                  width: "100%",
                 }}
-                placeholder="🔍 Search players by name or email..."
+                placeholder="Search candidates by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -192,111 +209,123 @@ export default function AdminUsersPage() {
             <div className="spinner spinner-lg" />
           </div>
         ) : (
-          <div className="table-container glass-card" style={{ background: "rgba(20, 14, 38, 0.8)", borderColor: "rgba(139, 92, 246, 0.2)" }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Player</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: "center" }}>Solved / Total</th>
-                  <th style={{ textAlign: "center" }}>Accuracy</th>
-                  <th>Joined</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((u) => {
-                  const accuracy =
-                    u.total_submissions > 0
-                      ? Math.round((u.accepted_submissions / u.total_submissions) * 100)
-                      : 0;
+          <div
+            className="kokonut-card"
+            style={{
+              padding: 24,
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
+            }}
+          >
+            <div className="table-container" style={{ margin: 0 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Player</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</th>
+                    <th style={{ textAlign: "center", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Solved / Total</th>
+                    <th style={{ textAlign: "center", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Accuracy</th>
+                    <th style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Joined</th>
+                    <th style={{ textAlign: "right", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((u) => {
+                    const accuracy =
+                      u.total_submissions > 0
+                        ? Math.round((u.accepted_submissions / u.total_submissions) * 100)
+                        : 0;
 
-                  return (
-                    <tr key={u.id}>
-                      <td>
-                        <div style={{ fontWeight: 700, color: "#f3e8ff" }}>
-                          {u.display_name || u.username}
-                        </div>
-                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                          @{u.username} • {u.email}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: "2px 8px",
-                            borderRadius: 4,
-                            background: u.role === "admin" ? "rgba(139, 92, 246, 0.2)" : "rgba(255,255,255,0.06)",
-                            color: u.role === "admin" ? "#c084fc" : "var(--text-secondary)",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {u.role.toUpperCase()}
-                        </span>
-                      </td>
-                      <td>
-                        {u.is_banned ? (
+                    return (
+                      <tr key={u.id}>
+                        <td>
+                          <div style={{ fontWeight: 700, color: "#ffffff", fontSize: 13 }}>
+                            {u.display_name || u.username}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                            @{u.username} • {u.email}
+                          </div>
+                        </td>
+                        <td>
                           <span
-                            className="badge badge-wrong_answer"
-                            style={{ background: "rgba(239, 68, 68, 0.25)", color: "#f87171" }}
+                            style={{
+                              fontSize: 11,
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                              background: u.role === "admin" ? "rgba(99, 102, 241, 0.15)" : "rgba(255,255,255,0.05)",
+                              border: `1px solid ${u.role === "admin" ? "rgba(99, 102, 241, 0.3)" : "rgba(255,255,255,0.06)"}`,
+                              color: u.role === "admin" ? "#818cf8" : "var(--text-secondary)",
+                              fontWeight: 600,
+                              fontFamily: "var(--font-mono, monospace)",
+                            }}
                           >
-                            🚫 BANNED
+                            {u.role.toUpperCase()}
                           </span>
-                        ) : (
-                          <span className="badge badge-accepted">
-                            ● Active
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "center", color: "#f3e8ff", fontWeight: 600 }}>
-                        {u.solved_count} <span style={{ opacity: 0.5 }}>/ {u.total_submissions}</span>
-                      </td>
-                      <td style={{ textAlign: "center", fontWeight: 600 }}>
-                        <span style={{ color: accuracy >= 50 ? "#4ade80" : "#fbbf24" }}>
-                          {accuracy}%
-                        </span>
-                      </td>
-                      <td style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                          <button
-                            onClick={() => handleObserveUser(u)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: "4px 10px", fontSize: 12 }}
-                          >
-                            🔍 Observe
-                          </button>
-
-                          {u.role !== "admin" && (
-                            u.is_banned ? (
-                              <button
-                                onClick={() => handleUnban(u)}
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: "4px 10px", fontSize: 12, borderColor: "#4ade80", color: "#4ade80" }}
-                              >
-                                ✓ Unban
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => setBanningUser(u)}
-                                className="btn btn-danger btn-sm"
-                                style={{ padding: "4px 10px", fontSize: 12 }}
-                              >
-                                🚫 Ban
-                              </button>
-                            )
+                        </td>
+                        <td>
+                          {u.is_banned ? (
+                            <span
+                              className="badge badge-wrong_answer"
+                              style={{ background: "rgba(244, 63, 94, 0.15)", color: "#fb7185", border: "1px solid rgba(244, 63, 94, 0.25)" }}
+                            >
+                              Banned
+                            </span>
+                          ) : (
+                            <span className="badge badge-accepted" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                              <span className="dot-indicator dot-indicator-emerald" />
+                              <span>Active</span>
+                            </span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td style={{ textAlign: "center", color: "#ffffff", fontWeight: 600, fontFamily: "var(--font-mono, monospace)", fontSize: 12 }}>
+                          {u.solved_count} <span style={{ opacity: 0.4 }}>/ {u.total_submissions}</span>
+                        </td>
+                        <td style={{ textAlign: "center", fontWeight: 600, fontFamily: "var(--font-mono, monospace)", fontSize: 12 }}>
+                          <span style={{ color: accuracy >= 50 ? "#34d399" : "#fbbf24" }}>
+                            {accuracy}%
+                          </span>
+                        </td>
+                        <td style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                          {new Date(u.created_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                            <button
+                              onClick={() => handleObserveUser(u)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: "4px 10px", fontSize: 11 }}
+                            >
+                              Inspect Audit
+                            </button>
+
+                            {u.role !== "admin" && (
+                              u.is_banned ? (
+                                <button
+                                  onClick={() => handleUnban(u)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: "4px 10px", fontSize: 11, borderColor: "rgba(52, 211, 153, 0.4)", color: "#34d399" }}
+                                >
+                                  Unban
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setBanningUser(u)}
+                                  className="btn btn-danger btn-sm"
+                                  style={{ padding: "4px 10px", fontSize: 11 }}
+                                >
+                                  Ban Player
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -307,7 +336,7 @@ export default function AdminUsersPage() {
               position: "fixed",
               inset: 0,
               background: "rgba(0,0,0,0.85)",
-              backdropFilter: "blur(8px)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -316,34 +345,34 @@ export default function AdminUsersPage() {
             }}
           >
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
                 width: "100%",
                 maxWidth: 900,
                 maxHeight: "88vh",
                 overflowY: "auto",
-                background: "#161028",
-                borderColor: "rgba(139, 92, 246, 0.4)",
+                background: "var(--bg-secondary)",
+                border: "1px solid var(--border-default)",
                 padding: 28,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                    <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f3e8ff" }}>
-                      Candidate Observation: {observingUser.display_name || observingUser.username}
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff" }}>
+                      Candidate Audit: {observingUser.display_name || observingUser.username}
                     </h2>
                     {observingUser.is_banned ? (
-                      <span className="badge badge-wrong_answer">🚫 BANNED</span>
+                      <span className="badge badge-wrong_answer">Banned</span>
                     ) : (
                       <span className="badge badge-accepted">Active</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                    Email: {observingUser.email} • Total Solved: {observingUser.solved_count} • Submissions: {observingUser.total_submissions}
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                    Email: {observingUser.email} • Solved: {observingUser.solved_count} • Submissions: {observingUser.total_submissions}
                   </div>
                   {observingUser.is_banned && observingUser.ban_reason && (
-                    <div style={{ marginTop: 8, padding: "6px 12px", background: "rgba(239, 68, 68, 0.15)", borderRadius: 6, color: "#f87171", fontSize: 12 }}>
+                    <div style={{ marginTop: 8, padding: "6px 12px", background: "rgba(244, 63, 94, 0.1)", border: "1px solid rgba(244, 63, 94, 0.2)", borderRadius: 6, color: "#fb7185", fontSize: 12 }}>
                       <strong>Ban Reason:</strong> {observingUser.ban_reason}
                     </div>
                   )}
@@ -354,8 +383,9 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => setBanningUser(observingUser)}
                       className="btn btn-danger btn-sm"
+                      style={{ fontSize: 11, padding: "4px 10px" }}
                     >
-                      🚫 Ban Player
+                      Ban Player
                     </button>
                   )}
                   <button
@@ -364,8 +394,9 @@ export default function AdminUsersPage() {
                       setInspectedCode(null);
                     }}
                     className="btn btn-secondary btn-sm"
+                    style={{ fontSize: 11, padding: "4px 10px" }}
                   >
-                    ✕ Close
+                    Close
                   </button>
                 </div>
               </div>
@@ -376,36 +407,36 @@ export default function AdminUsersPage() {
                   <p style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading candidate submission audit log...</p>
                 </div>
               ) : userSubmissions.length === 0 ? (
-                <div className="empty-state" style={{ padding: "30px 0" }}>
-                  <p>No recorded submissions for this player yet.</p>
+                <div style={{ padding: "30px 0", textAlign: "center" }}>
+                  <p style={{ color: "var(--text-muted)", fontSize: 13 }}>No recorded submissions for this player yet.</p>
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: inspectedCode ? "1fr 1fr" : "1fr", gap: 20 }}>
-                  <div className="table-container">
+                  <div className="table-container" style={{ margin: 0 }}>
                     <table>
                       <thead>
                         <tr>
-                          <th>Problem</th>
-                          <th>Lang</th>
-                          <th>Verdict</th>
-                          <th>Time</th>
-                          <th>Inspect</th>
+                          <th style={{ fontSize: 11 }}>Problem</th>
+                          <th style={{ fontSize: 11 }}>Lang</th>
+                          <th style={{ fontSize: 11 }}>Verdict</th>
+                          <th style={{ fontSize: 11 }}>Time</th>
+                          <th style={{ fontSize: 11 }}>Inspect</th>
                         </tr>
                       </thead>
                       <tbody>
                         {userSubmissions.map((sub) => (
                           <tr key={sub.id}>
-                            <td style={{ fontWeight: 600, color: "#f3e8ff", fontSize: 13 }}>{sub.problem_title}</td>
+                            <td style={{ fontWeight: 600, color: "#ffffff", fontSize: 12 }}>{sub.problem_title}</td>
                             <td>
-                              <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.06)" }}>
-                                {sub.language}
+                              <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)", fontFamily: "var(--font-mono, monospace)" }}>
+                                {sub.language.toUpperCase()}
                               </span>
                             </td>
                             <td>
                               <VerdictBadge verdict={sub.verdict} />
                             </td>
-                            <td style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                              {new Date(sub.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <td style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono, monospace)" }}>
+                              {new Date(sub.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </td>
                             <td>
                               <button
@@ -425,7 +456,7 @@ export default function AdminUsersPage() {
                   {inspectedCode && (
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "#c084fc" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#ffffff", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "var(--font-mono, monospace)" }}>
                           Submitted Source Code
                         </span>
                         <button
@@ -433,7 +464,7 @@ export default function AdminUsersPage() {
                           className="btn btn-secondary btn-sm"
                           style={{ padding: "2px 6px", fontSize: 10 }}
                         >
-                          ✕
+                          Close
                         </button>
                       </div>
                       <pre
@@ -441,7 +472,8 @@ export default function AdminUsersPage() {
                         style={{
                           flex: 1,
                           padding: 14,
-                          background: "#0a0714",
+                          background: "rgba(0, 0, 0, 0.4)",
+                          border: "1px solid rgba(255, 255, 255, 0.05)",
                           borderRadius: 8,
                           fontSize: 12,
                           overflowX: "auto",
@@ -466,7 +498,7 @@ export default function AdminUsersPage() {
               position: "fixed",
               inset: 0,
               background: "rgba(0,0,0,0.85)",
-              backdropFilter: "blur(8px)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -475,51 +507,50 @@ export default function AdminUsersPage() {
             }}
           >
             <div
-              className="glass-card"
+              className="kokonut-card"
               style={{
                 width: "100%",
                 maxWidth: 480,
-                background: "#1a0f28",
-                borderColor: "rgba(239, 68, 68, 0.4)",
+                background: "var(--bg-secondary)",
+                border: "1px solid rgba(244, 63, 94, 0.3)",
                 padding: 28,
               }}
             >
-              <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
                 <div
                   style={{
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     borderRadius: "50%",
-                    background: "rgba(239, 68, 68, 0.2)",
-                    color: "#f87171",
+                    background: "rgba(244, 63, 94, 0.15)",
+                    color: "#fb7185",
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 24,
                     marginBottom: 12,
                   }}
                 >
-                  🚫
+                  <IconShield size={22} />
                 </div>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f3e8ff" }}>
-                  Ban Player: {banningUser.username}
+                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#ffffff" }}>
+                  Ban Candidate: {banningUser.username}
                 </h2>
                 <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
-                  This will immediately revoke their access, block submissions, and disqualify them from contests.
+                  This will immediately revoke their access, block submissions, and disqualify them from tournaments.
                 </p>
               </div>
 
               <div style={{ marginBottom: 20 }}>
-                <label className="label" style={{ color: "#fca5a5" }}>
-                  Reason for Ban (Visible to Player)
+                <label className="label" style={{ color: "#fb7185" }}>
+                  Reason for Ban (Logged & Disclosed to Candidate)
                 </label>
                 <textarea
                   className="input textarea"
                   rows={3}
-                  placeholder="e.g. Plagiarism detected in Weekly Contest #3 or unpermitted external collaboration"
+                  placeholder="e.g. Plagiarism detected in Weekly Contest or external collaboration"
                   value={banReason}
                   onChange={(e) => setBanReason(e.target.value)}
-                  style={{ borderColor: "rgba(239, 68, 68, 0.3)" }}
+                  style={{ borderColor: "rgba(244, 63, 94, 0.3)" }}
                 />
               </div>
 

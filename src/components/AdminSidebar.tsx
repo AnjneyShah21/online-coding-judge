@@ -1,6 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  IconChart,
+  IconCode,
+  IconTrophy,
+  IconShield,
+  IconTerminal,
+  IconChevronRight,
+} from "@/components/Icons";
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -16,12 +24,12 @@ export default function AdminSidebar() {
   };
 
   const navItems = [
-    { label: "Dashboard", href: "/admin", icon: "📊" },
-    { label: "Problems", href: "/admin/problems", icon: "📝" },
-    { label: "New Problem", href: "/admin/problems/new", icon: "➕" },
-    { label: "Weekly Contests", href: "/admin/contests", icon: "🏆" },
-    { label: "Player Moderation", href: "/admin/users", icon: "🛡️" },
-    { label: "All Submissions", href: "/admin/submissions", icon: "⚡" },
+    { label: "Dashboard", href: "/admin", icon: IconChart },
+    { label: "Problem Registry", href: "/admin/problems", icon: IconCode },
+    { label: "Provision Problem", href: "/admin/problems/new", icon: IconCode },
+    { label: "Weekly Contests", href: "/admin/contests", icon: IconTrophy },
+    { label: "Player Moderation", href: "/admin/users", icon: IconShield },
+    { label: "Live Submissions", href: "/admin/submissions", icon: IconTerminal },
   ];
 
   return (
@@ -33,10 +41,11 @@ export default function AdminSidebar() {
           top: 0,
           left: 0,
           right: 0,
-          height: 64,
-          background: "rgba(18, 12, 33, 0.95)",
+          height: 56,
+          background: "rgba(9, 9, 11, 0.95)",
           backdropFilter: "blur(20px)",
-          borderBottom: "1px solid rgba(139, 92, 246, 0.2)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -47,51 +56,55 @@ export default function AdminSidebar() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link
             href="/admin"
-            className="navbar-brand"
-            style={{ color: "#f3e8ff", textDecoration: "none" }}
-          >
-            <div
-              className="logo-icon"
-              style={{
-                background: "var(--admin-gradient)",
-                boxShadow: "0 0 15px rgba(139, 92, 246, 0.4)",
-              }}
-            >
-              🛡️
-            </div>
-            AI Judge <span style={{ fontSize: 12, opacity: 0.7, fontWeight: 500 }}>(Admin Portal)</span>
-          </Link>
-          <span
             style={{
-              padding: "2px 8px",
-              borderRadius: 4,
-              fontSize: 11,
-              fontWeight: 700,
-              background: "rgba(139, 92, 246, 0.25)",
-              color: "#c084fc",
-              border: "1px solid rgba(139, 92, 246, 0.3)",
-              letterSpacing: 0.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textDecoration: "none",
+              color: "#ffffff",
             }}
           >
-            SYSTEM ADMIN
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                background: "#18181f",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#c084fc",
+              }}
+            >
+              <IconShield size={14} />
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em" }}>
+              Admin Console
+            </span>
+          </Link>
+
+          <span className="hero-pill" style={{ padding: "2px 8px", fontSize: 10 }}>
+            <span className="dot-indicator dot-indicator-emerald" />
+            <span>Sandbox Active</span>
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link
             href="/problems"
             target="_blank"
             className="btn btn-secondary btn-sm"
-            style={{ fontSize: 12, borderColor: "rgba(139, 92, 246, 0.2)" }}
+            style={{ fontSize: 11, padding: "5px 12px", borderRadius: 7 }}
           >
-            ↗ View Public Site
+            Public Site ↗
           </Link>
           <button
             onClick={handleLogout}
             className="btn btn-danger btn-sm"
-            style={{ fontSize: 12 }}
+            style={{ fontSize: 11, padding: "5px 12px", borderRadius: 7 }}
           >
-            Exit Admin
+            Exit Console
           </button>
         </div>
       </header>
@@ -100,24 +113,29 @@ export default function AdminSidebar() {
       <aside
         className="sidebar"
         style={{
-          background: "rgba(18, 12, 33, 0.98)",
-          borderRight: "1px solid rgba(139, 92, 246, 0.15)",
+          background: "#0c0c10",
+          borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+          top: 56,
+          height: "calc(100vh - 56px)",
         }}
       >
         <div style={{ marginBottom: 24, padding: "0 8px" }}>
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 700,
+              fontSize: 10,
+              fontWeight: 600,
               textTransform: "uppercase",
-              letterSpacing: 1,
-              color: "rgba(216, 180, 254, 0.6)",
-              marginBottom: 8,
+              letterSpacing: "0.06em",
+              color: "var(--text-muted)",
+              marginBottom: 10,
+              fontFamily: "var(--font-mono, monospace)",
+              paddingLeft: 8,
             }}
           >
-            Management
+            Navigation
           </div>
           {navItems.map((item) => {
+            const Icon = item.icon;
             const isActive =
               item.href === "/admin"
                 ? pathname === "/admin"
@@ -127,8 +145,22 @@ export default function AdminSidebar() {
                 key={item.href}
                 href={item.href}
                 className={`sidebar-link ${isActive ? "active" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: isActive ? "#ffffff" : "var(--text-muted)",
+                  background: isActive ? "rgba(255, 255, 255, 0.08)" : "transparent",
+                  border: isActive ? "1px solid rgba(255, 255, 255, 0.09)" : "1px solid transparent",
+                  textDecoration: "none",
+                  marginBottom: 3,
+                }}
               >
-                <span>{item.icon}</span>
+                <Icon size={14} style={{ opacity: isActive ? 1 : 0.7 }} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -139,19 +171,22 @@ export default function AdminSidebar() {
           style={{
             position: "absolute",
             bottom: 24,
-            left: 16,
-            right: 16,
-            padding: 14,
+            left: 14,
+            right: 14,
+            padding: 12,
             borderRadius: 10,
-            background: "rgba(139, 92, 246, 0.08)",
-            border: "1px solid rgba(139, 92, 246, 0.15)",
-            fontSize: 12,
-            color: "#d8b4fe",
+            background: "#121217",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            fontSize: 11,
+            color: "var(--text-secondary)",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>🤖 AI Operations</div>
-          <div style={{ opacity: 0.8, fontSize: 11, lineHeight: 1.4 }}>
-            Generate test cases & stress-test candidate solutions automatically.
+          <div style={{ fontWeight: 600, color: "#ffffff", marginBottom: 3, display: "flex", alignItems: "center", gap: 5 }}>
+            <span className="dot-indicator dot-indicator-emerald" />
+            <span>Sandbox Isolation</span>
+          </div>
+          <div style={{ color: "var(--text-muted)", fontSize: 10, lineHeight: 1.4, fontFamily: "var(--font-mono, monospace)" }}>
+            Bubblewrap unshared PID, NET, IPC namespaces enabled.
           </div>
         </div>
       </aside>

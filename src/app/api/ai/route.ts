@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, getSession } from "@/lib/auth";
-import { generateTestCases, reviewCode, getSmartHint } from "@/lib/ai";
+import { generateTestCases, reviewCode, getSmartHint, huntCounterExample } from "@/lib/ai";
 import { getProblemById, getTestCasesForProblem, getSubmissionById } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
@@ -14,6 +14,21 @@ export async function POST(request: NextRequest) {
     const { action } = body;
 
     switch (action) {
+      case "hunt_counter_example": {
+        const problem = getProblemById(body.problem_id);
+        if (!problem) {
+          return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+        }
+        const sampleCases = getTestCasesForProblem(body.problem_id).filter((tc) => tc.is_sample);
+        const counterExample = await huntCounterExample(
+          body.code,
+          body.language,
+          problem.description,
+          sampleCases.map((tc) => ({ input: tc.input, expected_output: tc.expected_output }))
+        );
+        return NextResponse.json({ counterExample });
+      }
+
       case "generate_test_cases": {
         // Admin only
         if (session.role !== "admin") {

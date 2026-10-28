@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
+import { IconArrowLeft, IconChevronRight, IconCode } from "@/components/Icons";
 
 export default function NewProblemPage() {
   const router = useRouter();
@@ -85,38 +86,65 @@ export default function NewProblemPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0c0817" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       <AdminSidebar />
-      <main className="main-with-sidebar">
-        <div className="page-header">
+      <main className="main-with-sidebar" style={{ maxWidth: 1100, paddingTop: 96, paddingBottom: 60, paddingLeft: 32, paddingRight: 32 }}>
+        <div style={{ marginBottom: 28 }}>
           <Link
             href="/admin/problems"
-            style={{ fontSize: 13, color: "#c084fc", textDecoration: "none", display: "inline-block", marginBottom: 8 }}
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 14,
+            }}
           >
-            ← Back to Problems
+            <IconArrowLeft size={13} />
+            <span>Back to Problem Registry</span>
           </Link>
-          <h1 className="page-title" style={{ color: "#f3e8ff" }}>
-            Create New Problem
+          <div className="hero-pill" style={{ marginBottom: 10 }}>
+            <span className="dot-indicator dot-indicator-blue" />
+            <span>Problem Authoring Workspace</span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff", marginBottom: 6 }}>
+            Publish New Challenge
           </h1>
-          <p className="page-subtitle">
-            Configure problem statement, target language track, constraints, and starter boilerplate.
+          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+            Configure problem statement, dedicated language track, execution limits, and starter boilerplate.
           </p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div
+            style={{
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: "rgba(244, 63, 94, 0.1)",
+              border: "1px solid rgba(244, 63, 94, 0.2)",
+              color: "#fb7185",
+              fontSize: 13,
+              marginBottom: 20,
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div
-            className="glass-card"
+            className="kokonut-card"
             style={{
               padding: 28,
-              background: "rgba(20, 14, 38, 0.8)",
-              borderColor: "rgba(139, 92, 246, 0.2)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
               marginBottom: 24,
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 16 }}>
-              Problem Details & Target Track
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 18 }}>
+              Problem Metadata & Language Track
             </h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
@@ -125,7 +153,7 @@ export default function NewProblemPage() {
                 <input
                   type="text"
                   className="input"
-                  placeholder="e.g. C++ Custom Comparator Priority Queue"
+                  placeholder="e.g. Custom Comparator Priority Queue"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
@@ -139,11 +167,11 @@ export default function NewProblemPage() {
                   value={targetLanguage}
                   onChange={(e) => setTargetLanguage(e.target.value as "cpp" | "java" | "python" | "javascript" | "all")}
                 >
-                  <option value="cpp">⚡ C++ Track Dedicated</option>
-                  <option value="java">☕ Java Track Dedicated</option>
-                  <option value="python">🐍 Python Track Dedicated</option>
-                  <option value="javascript">📜 JavaScript Track Dedicated</option>
-                  <option value="all">🌐 All Languages (Multi-Language)</option>
+                  <option value="cpp">C++ Track Dedicated</option>
+                  <option value="java">Java Track Dedicated</option>
+                  <option value="python">Python Track Dedicated</option>
+                  <option value="javascript">JavaScript Track Dedicated</option>
+                  <option value="all">All Languages (Multi-Track)</option>
                 </select>
               </div>
 
@@ -196,7 +224,7 @@ export default function NewProblemPage() {
               </div>
             </div>
 
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 6 }}>
               <label className="label">Problem Statement (Markdown supported)</label>
               <textarea
                 className="input textarea mono"
@@ -210,21 +238,21 @@ export default function NewProblemPage() {
 
           {/* Starter Codes */}
           <div
-            className="glass-card"
+            className="kokonut-card"
             style={{
               padding: 28,
-              background: "rgba(20, 14, 38, 0.8)",
-              borderColor: "rgba(139, 92, 246, 0.2)",
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-subtle)",
               marginBottom: 24,
             }}
           >
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 16 }}>
-              Starter Code Templates ({targetLanguage.toUpperCase()})
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 18 }}>
+              Starter Code Template ({targetLanguage.toUpperCase()})
             </h2>
 
             {(targetLanguage === "cpp" || targetLanguage === "all") && (
               <div style={{ marginBottom: 16 }}>
-                <label className="label">⚡ C++ (g++) Starter Code</label>
+                <label className="label">C++ (g++ 17) Starter Template</label>
                 <textarea
                   className="input textarea mono"
                   rows={6}
@@ -236,7 +264,7 @@ export default function NewProblemPage() {
 
             {(targetLanguage === "java" || targetLanguage === "all") && (
               <div style={{ marginBottom: 16 }}>
-                <label className="label">☕ Java Starter Code</label>
+                <label className="label">Java (OpenJDK 17) Starter Template</label>
                 <textarea
                   className="input textarea mono"
                   rows={6}
@@ -248,7 +276,7 @@ export default function NewProblemPage() {
 
             {(targetLanguage === "python" || targetLanguage === "all") && (
               <div style={{ marginBottom: 16 }}>
-                <label className="label">🐍 Python 3 Starter Code</label>
+                <label className="label">Python 3 Starter Template</label>
                 <textarea
                   className="input textarea mono"
                   rows={6}
@@ -260,7 +288,7 @@ export default function NewProblemPage() {
 
             {(targetLanguage === "javascript" || targetLanguage === "all") && (
               <div style={{ marginBottom: 16 }}>
-                <label className="label">📜 JavaScript (Node.js) Starter Code</label>
+                <label className="label">JavaScript (Node.js) Starter Template</label>
                 <textarea
                   className="input textarea mono"
                   rows={6}
@@ -275,8 +303,20 @@ export default function NewProblemPage() {
             <Link href="/admin/problems" className="btn btn-secondary">
               Cancel
             </Link>
-            <button type="submit" className="btn btn-admin" disabled={loading}>
-              {loading ? <span className="spinner" /> : "Save & Proceed to Test Cases →"}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              {loading ? (
+                <span className="spinner" />
+              ) : (
+                <>
+                  <span>Save & Setup Test Cases</span>
+                  <IconChevronRight size={13} />
+                </>
+              )}
             </button>
           </div>
         </form>

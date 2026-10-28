@@ -137,6 +137,33 @@ function initializeDb(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_submission_results_submission ON submission_results(submission_id);
     CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id);
     CREATE INDEX IF NOT EXISTS idx_contests_time ON contests(start_time, end_time);
+
+    CREATE TABLE IF NOT EXISTS discussions (
+      id TEXT PRIMARY KEY,
+      problem_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      parent_id TEXT,
+      title TEXT,
+      content TEXT NOT NULL,
+      upvotes INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (parent_id) REFERENCES discussions(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS discussion_votes (
+      user_id TEXT NOT NULL,
+      discussion_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, discussion_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_discussions_problem ON discussions(problem_id);
+    CREATE INDEX IF NOT EXISTS idx_discussions_parent ON discussions(parent_id);
   `);
 
   // Safe runtime migrations for existing databases
@@ -145,6 +172,9 @@ function initializeDb(db: Database.Database) {
   try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT;"); } catch {}
   try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;"); } catch {}
   try { db.exec("ALTER TABLE problems ADD COLUMN target_languages TEXT DEFAULT '[\"python\",\"cpp\",\"javascript\"]';"); } catch {}
+  try { db.exec("ALTER TABLE contests ADD COLUMN is_published INTEGER DEFAULT 0;"); } catch {}
+  try { db.exec("ALTER TABLE contest_participants ADD COLUMN has_ended INTEGER DEFAULT 0;"); } catch {}
+  try { db.exec("ALTER TABLE contest_participants ADD COLUMN ended_at TEXT;"); } catch {}
 
 
   // Seed default admin if none exists
@@ -961,9 +991,19 @@ export function getUserProgressStats(userId: string) {
 }
 
 // ─── Weekly Contests Helpers ──────────────────────────────
-export function getAllContests(includeUnpublished = false) {
+export function getAllContests(userId?: string, isAdmin = false) {
   const db = getDb();
-  const where = includeUnpublished ? "" : "WHERE c.is_published = 1";
+  let where = "";
+  let params: any[] = [];
+  if (isAdmin) {
+    where = "";
+  } else if (userId) {
+    where = "WHERE (c.is_published = 1 OR c.created_by = ?)";
+    params = [userId];
+  } else {
+    where = "WHERE c.is_published = 1";
+  }
+
   return db.prepare(`
     SELECT 
       c.*,
@@ -975,7 +1015,7 @@ export function getAllContests(includeUnpublished = false) {
     ${where}
     GROUP BY c.id
     ORDER BY c.start_time DESC
-  `).all() as ContestRow[];
+  `).all(...params) as ContestRow[];
 }
 
 export function getContestById(id: string) {
@@ -1060,11 +1100,28 @@ export function isUserRegisteredForContest(contestId: string, userId: string): b
   return !!row;
 }
 
+export function exitContest(contestId: string, userId: string) {
+  const db = getDb();
+  return db.prepare(`
+    UPDATE contest_participants 
+    SET has_ended = 1, ended_at = datetime('now')
+    WHERE contest_id = ? AND user_id = ?
+  `).run(contestId, userId);
+}
+
+export function isUserContestEnded(contestId: string, userId: string): boolean {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT has_ended FROM contest_participants WHERE contest_id = ? AND user_id = ?
+  `).get(contestId, userId) as { has_ended: number } | undefined;
+  return row ? Boolean(row.has_ended) : false;
+}
+
 export function getContestLeaderboard(contestId: string) {
   return getDb().prepare(`
     SELECT 
       u.id as user_id, u.username, u.display_name, u.avatar_url,
-      cp.score, cp.penalty_seconds, cp.registered_at
+      cp.score, cp.penalty_seconds, cp.registered_at, cp.has_ended
     FROM contest_participants cp
     JOIN users u ON cp.user_id = u.id
     WHERE cp.contest_id = ? AND u.is_banned = 0
@@ -1077,5 +1134,103 @@ export function getContestLeaderboard(contestId: string) {
     score: number;
     penalty_seconds: number;
     registered_at: string;
+    has_ended: number;
   }>;
+}
+
+// ─── Discussion Helpers ────────────────────────────────────
+export function getProblemDiscussions(problemId: string, currentUserId?: string) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT 
+      d.id,
+      d.problem_id,
+      d.user_id,
+      d.parent_id,
+      d.title,
+      d.content,
+      d.upvotes,
+      d.created_at,
+      u.username,
+      u.display_name,
+      u.role as user_role,
+      u.avatar_url,
+      (SELECT COUNT(*) FROM discussions r WHERE r.parent_id = d.id) as reply_count
+    FROM discussions d
+    JOIN users u ON d.user_id = u.id
+    WHERE d.problem_id = ? AND d.parent_id IS NULL
+    ORDER BY d.created_at DESC
+  `).all(problemId) as any[];
+
+  return rows.map((r) => {
+    let hasVoted = false;
+    if (currentUserId) {
+      const vote = db.prepare("SELECT 1 FROM discussion_votes WHERE discussion_id = ? AND user_id = ?").get(r.id, currentUserId);
+      hasVoted = Boolean(vote);
+    }
+    return { ...r, has_voted: hasVoted };
+  });
+}
+
+export function getDiscussionReplies(parentId: string, currentUserId?: string) {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT 
+      d.id,
+      d.problem_id,
+      d.user_id,
+      d.parent_id,
+      d.title,
+      d.content,
+      d.upvotes,
+      d.created_at,
+      u.username,
+      u.display_name,
+      u.role as user_role,
+      u.avatar_url
+    FROM discussions d
+    JOIN users u ON d.user_id = u.id
+    WHERE d.parent_id = ?
+    ORDER BY d.created_at ASC
+  `).all(parentId) as any[];
+
+  return rows.map((r) => {
+    let hasVoted = false;
+    if (currentUserId) {
+      const vote = db.prepare("SELECT 1 FROM discussion_votes WHERE discussion_id = ? AND user_id = ?").get(r.id, currentUserId);
+      hasVoted = Boolean(vote);
+    }
+    return { ...r, has_voted: hasVoted };
+  });
+}
+
+export function createDiscussionPost(data: {
+  id: string;
+  problem_id: string;
+  user_id: string;
+  parent_id?: string | null;
+  title?: string | null;
+  content: string;
+}) {
+  const db = getDb();
+  return db.prepare(`
+    INSERT INTO discussions (id, problem_id, user_id, parent_id, title, content)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(data.id, data.problem_id, data.user_id, data.parent_id || null, data.title || null, data.content);
+}
+
+export function toggleDiscussionVote(discussionId: string, userId: string) {
+  const db = getDb();
+  const existing = db.prepare("SELECT 1 FROM discussion_votes WHERE user_id = ? AND discussion_id = ?").get(userId, discussionId);
+  if (existing) {
+    db.prepare("DELETE FROM discussion_votes WHERE user_id = ? AND discussion_id = ?").run(userId, discussionId);
+    db.prepare("UPDATE discussions SET upvotes = MAX(0, upvotes - 1) WHERE id = ?").run(discussionId);
+    const updated = db.prepare("SELECT upvotes FROM discussions WHERE id = ?").get(discussionId) as { upvotes: number };
+    return { voted: false, upvotes: updated.upvotes };
+  } else {
+    db.prepare("INSERT INTO discussion_votes (user_id, discussion_id) VALUES (?, ?)").run(userId, discussionId);
+    db.prepare("UPDATE discussions SET upvotes = upvotes + 1 WHERE id = ?").run(discussionId);
+    const updated = db.prepare("SELECT upvotes FROM discussions WHERE id = ?").get(discussionId) as { upvotes: number };
+    return { voted: true, upvotes: updated.upvotes };
+  }
 }
