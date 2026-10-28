@@ -10,24 +10,29 @@ export default function NewProblemPage() {
   const [error, setError] = useState("");
 
   const [title, setTitle] = useState("");
+  const [targetLanguage, setTargetLanguage] = useState<"cpp" | "java" | "python" | "javascript" | "all">("cpp");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [timeLimitMs, setTimeLimitMs] = useState(2000);
   const [memoryLimitMb, setMemoryLimitMb] = useState(256);
   const [tagsInput, setTagsInput] = useState("algorithms, data-structures");
   const [description, setDescription] = useState(
-    `# Problem Description\n\nGiven an array of integers \`nums\` and an integer \`target\`, return indices of the two numbers such that they add up to \`target\`.\n\n### Constraints\n- \`2 <= nums.length <= 10^4\`\n- \`-10^9 <= nums[i] <= 10^9\`\n\n### Input Format\n- First line contains integer \`n\`\n- Second line contains \`n\` space-separated integers\n- Third line contains integer \`target\`\n\n### Output Format\n- Two space-separated integers representing the 0-based indices\n`
+    `# Problem Description\n\nGiven the input specifications, solve the challenge adhering to strict time and memory bounds.\n\n### Constraints\n- \`1 <= n <= 10^5\`\n\n### Input Format\n- Standard input stream\n\n### Output Format\n- Single line output\n`
   );
 
   const [starterPy, setStarterPy] = useState(
-    `import sys\n\ndef solve():\n    lines = sys.stdin.read().split()\n    if not lines:\n        return\n    n = int(lines[0])\n    nums = [int(x) for x in lines[1:n+1]]\n    target = int(lines[n+1])\n    # Write your solution here\n    \nsolve()\n`
+    `import sys\n\ndef solve():\n    lines = sys.stdin.read().split()\n    if not lines:\n        return\n    # Write Python solution here\n    \nsolve()\n`
   );
 
   const [starterCpp, setStarterCpp] = useState(
-    `#include <iostream>\n#include <vector>\n#include <unordered_map>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    int n;\n    if (!(cin >> n)) return 0;\n    vector<int> nums(n);\n    for (int i = 0; i < n; i++) cin >> nums[i];\n    int target;\n    cin >> target;\n    \n    // Write your solution here\n    \n    return 0;\n}\n`
+    `#include <iostream>\n#include <vector>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    // Write C++ solution here\n    \n    return 0;\n}\n`
+  );
+
+  const [starterJava, setStarterJava] = useState(
+    `import java.util.*;\nimport java.io.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write Java solution here\n    }\n}\n`
   );
 
   const [starterJs, setStarterJs] = useState(
-    `const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);\n    if (input.length < 2) return;\n    const n = parseInt(input[0], 10);\n    const nums = input.slice(1, n + 1).map(Number);\n    const target = parseInt(input[n + 1], 10);\n    \n    // Write your solution here\n}\n\nmain();\n`
+    `const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);\n    if (!input || input.length === 0) return;\n    \n    // Write JavaScript solution here\n}\n\nmain();\n`
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,11 +45,13 @@ export default function NewProblemPage() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const starter_code = {
-      python: starterPy,
-      cpp: starterCpp,
-      javascript: starterJs,
-    };
+    const starter_code: Record<string, string> = {};
+    if (targetLanguage === "python" || targetLanguage === "all") starter_code.python = starterPy;
+    if (targetLanguage === "cpp" || targetLanguage === "all") starter_code.cpp = starterCpp;
+    if (targetLanguage === "java" || targetLanguage === "all") starter_code.java = starterJava;
+    if (targetLanguage === "javascript" || targetLanguage === "all") starter_code.javascript = starterJs;
+
+    const target_languages = targetLanguage === "all" ? ["cpp", "java", "python", "javascript"] : [targetLanguage];
 
     try {
       const res = await fetch("/api/problems", {
@@ -58,6 +65,7 @@ export default function NewProblemPage() {
           memory_limit_mb: Number(memoryLimitMb),
           tags,
           starter_code,
+          target_languages,
         }),
       });
 
@@ -91,7 +99,7 @@ export default function NewProblemPage() {
             Create New Problem
           </h1>
           <p className="page-subtitle">
-            Configure problem statement, constraints, time limits, and starter templates.
+            Configure problem statement, target language track, constraints, and starter boilerplate.
           </p>
         </div>
 
@@ -108,20 +116,35 @@ export default function NewProblemPage() {
             }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 16 }}>
-              Problem Details
+              Problem Details & Target Track
             </h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
               <div>
                 <label className="label">Problem Title</label>
                 <input
                   type="text"
                   className="input"
-                  placeholder="e.g. Two Sum"
+                  placeholder="e.g. C++ Custom Comparator Priority Queue"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
                 />
+              </div>
+
+              <div>
+                <label className="label">Target Language Track</label>
+                <select
+                  className="input select"
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value as "cpp" | "java" | "python" | "javascript" | "all")}
+                >
+                  <option value="cpp">⚡ C++ Track Dedicated</option>
+                  <option value="java">☕ Java Track Dedicated</option>
+                  <option value="python">🐍 Python Track Dedicated</option>
+                  <option value="javascript">📜 JavaScript Track Dedicated</option>
+                  <option value="all">🌐 All Languages (Multi-Language)</option>
+                </select>
               </div>
 
               <div>
@@ -166,7 +189,7 @@ export default function NewProblemPage() {
                 <input
                   type="text"
                   className="input"
-                  placeholder="hash-table, arrays, math"
+                  placeholder="stl, collections, prefix-sum"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                 />
@@ -196,38 +219,56 @@ export default function NewProblemPage() {
             }}
           >
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#f3e8ff", marginBottom: 16 }}>
-              Starter Code Templates
+              Starter Code Templates ({targetLanguage.toUpperCase()})
             </h2>
 
-            <div style={{ marginBottom: 16 }}>
-              <label className="label">Python 3 Starter Code</label>
-              <textarea
-                className="input textarea mono"
-                rows={5}
-                value={starterPy}
-                onChange={(e) => setStarterPy(e.target.value)}
-              />
-            </div>
+            {(targetLanguage === "cpp" || targetLanguage === "all") && (
+              <div style={{ marginBottom: 16 }}>
+                <label className="label">⚡ C++ (g++) Starter Code</label>
+                <textarea
+                  className="input textarea mono"
+                  rows={6}
+                  value={starterCpp}
+                  onChange={(e) => setStarterCpp(e.target.value)}
+                />
+              </div>
+            )}
 
-            <div style={{ marginBottom: 16 }}>
-              <label className="label">C++ (g++) Starter Code</label>
-              <textarea
-                className="input textarea mono"
-                rows={5}
-                value={starterCpp}
-                onChange={(e) => setStarterCpp(e.target.value)}
-              />
-            </div>
+            {(targetLanguage === "java" || targetLanguage === "all") && (
+              <div style={{ marginBottom: 16 }}>
+                <label className="label">☕ Java Starter Code</label>
+                <textarea
+                  className="input textarea mono"
+                  rows={6}
+                  value={starterJava}
+                  onChange={(e) => setStarterJava(e.target.value)}
+                />
+              </div>
+            )}
 
-            <div style={{ marginBottom: 16 }}>
-              <label className="label">JavaScript (Node.js) Starter Code</label>
-              <textarea
-                className="input textarea mono"
-                rows={5}
-                value={starterJs}
-                onChange={(e) => setStarterJs(e.target.value)}
-              />
-            </div>
+            {(targetLanguage === "python" || targetLanguage === "all") && (
+              <div style={{ marginBottom: 16 }}>
+                <label className="label">🐍 Python 3 Starter Code</label>
+                <textarea
+                  className="input textarea mono"
+                  rows={6}
+                  value={starterPy}
+                  onChange={(e) => setStarterPy(e.target.value)}
+                />
+              </div>
+            )}
+
+            {(targetLanguage === "javascript" || targetLanguage === "all") && (
+              <div style={{ marginBottom: 16 }}>
+                <label className="label">📜 JavaScript (Node.js) Starter Code</label>
+                <textarea
+                  className="input textarea mono"
+                  rows={6}
+                  value={starterJs}
+                  onChange={(e) => setStarterJs(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>

@@ -13,6 +13,7 @@ interface Problem {
   time_limit_ms: number;
   memory_limit_mb: number;
   tags: string[];
+  target_languages?: string[];
   starter_code?: Record<string, string>;
 }
 
@@ -65,7 +66,6 @@ function ProblemsContent() {
         body: JSON.stringify({ problem_id: problemId }),
       });
       if (!res.ok) {
-        // Revert on failure
         setBookmarkedIds((prev) => {
           const next = new Set(prev);
           if (next.has(problemId)) next.delete(problemId);
@@ -74,7 +74,6 @@ function ProblemsContent() {
         });
       }
     } catch {
-      // Revert on error
       setBookmarkedIds((prev) => {
         const next = new Set(prev);
         if (next.has(problemId)) next.delete(problemId);
@@ -82,6 +81,18 @@ function ProblemsContent() {
         return next;
       });
     }
+  };
+
+  const getTargetLanguages = (p: Problem): string[] => {
+    if (Array.isArray(p.target_languages)) return p.target_languages;
+    if (typeof p.target_languages === "string") {
+      try {
+        return JSON.parse(p.target_languages);
+      } catch {
+        return [];
+      }
+    }
+    return [];
   };
 
   const filtered = problems.filter((p) => {
@@ -94,19 +105,53 @@ function ProblemsContent() {
 
     const matchesBookmark = !bookmarkedOnly || bookmarkedIds.has(p.id);
 
-    // Filter by language: if language filter is specified, check if starter_code or tags support it
+    // Strict Language Isolation:
+    // If language is selected, ONLY show questions explicitly targeted for that language!
     let matchesLang = true;
     if (languageFilter !== "all") {
-      const starters = p.starter_code || {};
-      matchesLang =
-        !!starters[languageFilter] ||
-        p.tags?.some((t) => t.toLowerCase().includes(languageFilter.toLowerCase())) ||
-        // If no explicit starter code is restricted, all problems support the top 3 sandbox languages
-        true;
+      const targets = getTargetLanguages(p);
+      matchesLang = targets.includes(languageFilter) || targets.includes("all");
     }
 
     return matchesSearch && matchesDiff && matchesBookmark && matchesLang;
   });
+
+  const getLanguageBadge = (p: Problem) => {
+    const targets = getTargetLanguages(p);
+    if (targets.includes("cpp")) {
+      return (
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: "rgba(139, 92, 246, 0.15)", color: "var(--accent-purple)", border: "1px solid rgba(139, 92, 246, 0.3)" }}>
+          ⚡ C++ Track
+        </span>
+      );
+    }
+    if (targets.includes("java")) {
+      return (
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: "rgba(239, 68, 68, 0.15)", color: "#f87171", border: "1px solid rgba(239, 68, 68, 0.3)" }}>
+          ☕ Java Track
+        </span>
+      );
+    }
+    if (targets.includes("python")) {
+      return (
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: "rgba(79, 143, 255, 0.15)", color: "var(--accent-blue)", border: "1px solid rgba(79, 143, 255, 0.3)" }}>
+          🐍 Python Track
+        </span>
+      );
+    }
+    if (targets.includes("javascript")) {
+      return (
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: "rgba(245, 158, 11, 0.15)", color: "var(--accent-amber)", border: "1px solid rgba(245, 158, 11, 0.3)" }}>
+          📜 JavaScript Track
+        </span>
+      );
+    }
+    return (
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: "var(--bg-elevated)", color: "var(--text-muted)", border: "1px solid var(--border-subtle)" }}>
+        🌐 Multi-Language
+      </span>
+    );
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
@@ -135,13 +180,23 @@ function ProblemsContent() {
                 letterSpacing: 1,
               }}
             >
-              Algorithm Challenges
+              Language-Specific Challenges
             </span>
             <h1 style={{ fontSize: 32, fontWeight: 800, margin: "8px 0 10px" }}>
-              Explore Coding Challenges
+              {languageFilter === "cpp"
+                ? "⚡ C++ Programming Track"
+                : languageFilter === "java"
+                ? "☕ Java Programming Track"
+                : languageFilter === "python"
+                ? "🐍 Python Programming Track"
+                : languageFilter === "javascript"
+                ? "📜 JavaScript Programming Track"
+                : "Explore Coding Challenges"}
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.6 }}>
-              Solve programming challenges in Python, C++, or JavaScript. Run untrusted code safely against hidden test suites in Linux bubblewrap sandboxes with instant AI debugging feedback.
+              {languageFilter !== "all"
+                ? `Showing exclusive questions designed specifically for ${languageFilter.toUpperCase()} with tailored idioms, memory constraints, and starter boilerplate.`
+                : "Each programming language has its own tailored problem sets. Choose a track below to see language-specific challenges."}
             </p>
           </div>
         </div>
@@ -154,7 +209,7 @@ function ProblemsContent() {
               <input
                 type="text"
                 className="input"
-                placeholder="🔍 Search problems by title or tag (e.g. array, dp, math)..."
+                placeholder="🔍 Search problems by title or tag (e.g. stl, collections, matrix)..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -164,8 +219,9 @@ function ProblemsContent() {
             <div className="tabs">
               {[
                 { id: "all", label: "All Languages" },
+                { id: "cpp", label: "⚡ C++ (CPP)" },
+                { id: "java", label: "☕ Java" },
                 { id: "python", label: "🐍 Python" },
-                { id: "cpp", label: "⚡ C++" },
                 { id: "javascript", label: "📜 JavaScript" },
               ].map((lang) => (
                 <button
@@ -219,11 +275,11 @@ function ProblemsContent() {
         ) : filtered.length === 0 ? (
           <div className="empty-state glass-card" style={{ padding: 60 }}>
             <div className="empty-icon">🔍</div>
-            <h3>No Problems Found</h3>
+            <h3>No Problems Found for this Filter</h3>
             <p style={{ color: "var(--text-muted)" }}>
-              {search || difficultyFilter !== "all" || bookmarkedOnly
-                ? "Try adjusting your search query or filters."
-                : "No problems published yet. Admins can create problems from the Admin Portal."}
+              {languageFilter !== "all"
+                ? `No questions currently found for ${languageFilter.toUpperCase()}. Admins can set questions for this language in the Admin Portal.`
+                : "Try adjusting your search query or filters."}
             </p>
           </div>
         ) : (
@@ -282,17 +338,7 @@ function ProblemsContent() {
 
                     <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                       {/* Language Availability Pill */}
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(79, 143, 255, 0.12)", color: "var(--accent-blue)" }}>
-                          🐍 Python
-                        </span>
-                        <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(139, 92, 246, 0.12)", color: "var(--accent-purple)" }}>
-                          ⚡ C++
-                        </span>
-                        <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "rgba(245, 158, 11, 0.12)", color: "var(--accent-amber)" }}>
-                          📜 JS
-                        </span>
-                      </div>
+                      {getLanguageBadge(problem)}
 
                       <div style={{ display: "flex", gap: 6 }}>
                         {problem.tags?.map((t) => (

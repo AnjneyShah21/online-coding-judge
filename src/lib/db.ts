@@ -62,7 +62,7 @@ function initializeDb(db: Database.Database) {
       user_id TEXT NOT NULL,
       problem_id TEXT NOT NULL,
       code TEXT NOT NULL,
-      language TEXT NOT NULL CHECK(language IN ('python', 'cpp', 'javascript')),
+      language TEXT NOT NULL CHECK(language IN ('python', 'cpp', 'javascript', 'java')),
       verdict TEXT NOT NULL DEFAULT 'pending' CHECK(verdict IN ('pending', 'running', 'accepted', 'wrong_answer', 'time_limit_exceeded', 'memory_limit_exceeded', 'runtime_error', 'compilation_error')),
       runtime_ms INTEGER,
       memory_kb INTEGER,

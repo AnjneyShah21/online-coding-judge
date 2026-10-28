@@ -57,9 +57,10 @@ interface AIReview {
 }
 
 const DEFAULT_STARTERS: Record<string, string> = {
-  python: `import sys\n\ndef solve():\n    lines = sys.stdin.read().split()\n    if not lines:\n        return\n    # Write your solution here\n    \nsolve()\n`,
-  cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    // Write your solution here\n    \n    return 0;\n}\n`,
-  javascript: `const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);\n    if (!input || input.length === 0) return;\n    \n    // Write your solution here\n}\n\nmain();\n`,
+  python: `import sys\n\ndef solve():\n    lines = sys.stdin.read().split()\n    if not lines:\n        return\n    # Write Python solution here\n    \nsolve()\n`,
+  cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    \n    // Write C++ solution here\n    \n    return 0;\n}\n`,
+  java: `import java.util.*;\nimport java.io.*;\n\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write Java solution here\n    }\n}\n`,
+  javascript: `const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);\n    if (!input || input.length === 0) return;\n    \n    // Write JavaScript solution here\n}\n\nmain();\n`,
 };
 
 function ProblemSolverContent() {
@@ -71,7 +72,7 @@ function ProblemSolverContent() {
   const [leftTab, setLeftTab] = useState<"statement" | "hints" | "submissions">("statement");
 
   // Code editor state
-  const [language, setLanguage] = useState<"python" | "cpp" | "javascript">("python");
+  const [language, setLanguage] = useState<"python" | "cpp" | "java" | "javascript">("python");
   const [code, setCode] = useState<string>("");
 
   // Execution & Submission state
@@ -96,9 +97,19 @@ function ProblemSolverContent() {
           setProblem(data.problem);
           setTestCases(data.testCases || []);
 
-          // Load starter code for default language
+          // Auto-select problem's primary dedicated language track
+          const targetLangs: string[] = (data.problem as { target_languages?: string[] }).target_languages || [];
+          let activeLang: "python" | "cpp" | "java" | "javascript" = "python";
+          if (targetLangs.includes("cpp")) activeLang = "cpp";
+          else if (targetLangs.includes("java")) activeLang = "java";
+          else if (targetLangs.includes("javascript")) activeLang = "javascript";
+          else if (targetLangs.includes("python")) activeLang = "python";
+
+          setLanguage(activeLang);
+
+          // Load starter code for active language
           const starters = data.problem.starter_code || {};
-          const initialCode = starters[language] || DEFAULT_STARTERS[language];
+          const initialCode = starters[activeLang] || DEFAULT_STARTERS[activeLang];
           setCode(initialCode);
         }
         setLoading(false);
@@ -147,7 +158,7 @@ function ProblemSolverContent() {
       .catch(() => {});
   };
 
-  const handleLanguageChange = (newLang: "python" | "cpp" | "javascript") => {
+  const handleLanguageChange = (newLang: "python" | "cpp" | "java" | "javascript") => {
     setLanguage(newLang);
     if (problem && problem.starter_code && problem.starter_code[newLang]) {
       setCode(problem.starter_code[newLang]);
@@ -693,11 +704,12 @@ function ProblemSolverContent() {
               <select
                 className="input select"
                 value={language}
-                onChange={(e) => handleLanguageChange(e.target.value as "python" | "cpp" | "javascript")}
+                onChange={(e) => handleLanguageChange(e.target.value as "python" | "cpp" | "java" | "javascript")}
                 style={{ width: "auto", padding: "6px 28px 6px 12px", fontSize: 13 }}
               >
-                <option value="python">🐍 Python 3</option>
                 <option value="cpp">⚡ C++ (GCC g++)</option>
+                <option value="java">☕ Java</option>
+                <option value="python">🐍 Python 3</option>
                 <option value="javascript">📜 JavaScript (Node.js)</option>
               </select>
 
@@ -735,7 +747,7 @@ function ProblemSolverContent() {
           <div style={{ flex: 1, minHeight: 0 }}>
             <Editor
               height="100%"
-              language={language === "cpp" ? "cpp" : language === "python" ? "python" : "javascript"}
+              language={language === "cpp" ? "cpp" : language === "java" ? "java" : language === "python" ? "python" : "javascript"}
               theme="vs-dark"
               value={code}
               onChange={(val) => setCode(val || "")}

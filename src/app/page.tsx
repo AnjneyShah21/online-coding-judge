@@ -154,80 +154,15 @@ export default function HomePage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
             gap: 20,
           }}
         >
-          {/* Python Card */}
-          <div
-            className="glass-card"
-            style={{
-              padding: 28,
-              border: "1px solid rgba(79, 143, 255, 0.25)",
-              background: "linear-gradient(180deg, rgba(79, 143, 255, 0.08) 0%, rgba(15, 15, 25, 0.8) 100%)",
-              borderRadius: 16,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <div style={{ fontSize: 36 }}>🐍</div>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: "3px 10px",
-                    borderRadius: 12,
-                    background: "rgba(79, 143, 255, 0.15)",
-                    color: "var(--accent-blue)",
-                  }}
-                >
-                  Python 3.10+
-                </span>
-              </div>
-
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-                Python Track
-              </h3>
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
-                Fast prototyping, elegant standard libraries, and rapid algorithmic problem solving. Great for recursion, strings, and tree traversals.
-              </p>
-
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
-                {["Collections", "Math", "Heapq", "Fast I/O"].map((t) => (
-                  <span
-                    key={t}
-                    style={{
-                      fontSize: 11,
-                      padding: "2px 8px",
-                      borderRadius: 6,
-                      background: "var(--bg-elevated)",
-                      color: "var(--text-muted)",
-                      border: "1px solid var(--border-subtle)",
-                    }}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <Link
-              href="/problems?lang=python"
-              className="btn btn-primary"
-              style={{ width: "100%", textAlign: "center", padding: "10px 16px" }}
-            >
-              Practice Python →
-            </Link>
-          </div>
-
           {/* C++ Card */}
           <div
             className="glass-card"
             style={{
-              padding: 28,
+              padding: 24,
               border: "1px solid rgba(139, 92, 246, 0.25)",
               background: "linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(15, 15, 25, 0.8) 100%)",
               borderRadius: 16,
@@ -253,15 +188,15 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
                 C++ Track
               </h3>
               <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
-                The gold standard for competitive programming. Ultra-low latency execution, STL containers, pointers, bit manipulation, and raw speed.
+                Competitive programming mastery. STL priority queues, prefix XORs, bit manipulation, and raw hardware speed.
               </p>
 
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
-                {["STL Vectors", "Bitsets", "Graph Algorithms", "DP"].map((t) => (
+                {["STL Queues", "Prefix XOR", "Fast I/O", "Bitsets"].map((t) => (
                   <span
                     key={t}
                     style={{
@@ -294,11 +229,147 @@ export default function HomePage() {
             </Link>
           </div>
 
+          {/* Java Card */}
+          <div
+            className="glass-card"
+            style={{
+              padding: 24,
+              border: "1px solid rgba(239, 68, 68, 0.25)",
+              background: "linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(15, 15, 25, 0.8) 100%)",
+              borderRadius: 16,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontSize: 36 }}>☕</div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "3px 10px",
+                    borderRadius: 12,
+                    background: "rgba(239, 68, 68, 0.15)",
+                    color: "#f87171",
+                  }}
+                >
+                  Java 17/21
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                Java Track
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
+                Enterprise & OOP algorithmic challenges. HashMaps, PriorityQueues, StringBuilder, and clean object hierarchies.
+              </p>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+                {["Collections", "HashMap", "Tokenizers", "OOP"].map((t) => (
+                  <span
+                    key={t}
+                    style={{
+                      fontSize: 11,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      background: "var(--bg-elevated)",
+                      color: "var(--text-muted)",
+                      border: "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/problems?lang=java"
+              className="btn btn-secondary"
+              style={{
+                width: "100%",
+                textAlign: "center",
+                padding: "10px 16px",
+                borderColor: "rgba(239, 68, 68, 0.4)",
+                color: "#fca5a5",
+              }}
+            >
+              Practice Java →
+            </Link>
+          </div>
+
+          {/* Python Card */}
+          <div
+            className="glass-card"
+            style={{
+              padding: 24,
+              border: "1px solid rgba(79, 143, 255, 0.25)",
+              background: "linear-gradient(180deg, rgba(79, 143, 255, 0.08) 0%, rgba(15, 15, 25, 0.8) 100%)",
+              borderRadius: 16,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ fontSize: 36 }}>🐍</div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "3px 10px",
+                    borderRadius: 12,
+                    background: "rgba(79, 143, 255, 0.15)",
+                    color: "var(--accent-blue)",
+                  }}
+                >
+                  Python 3.10+
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+                Python Track
+              </h3>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
+                Rapid problem solving, matrix traversals, remainder prefix sums, and elegant dictionary frequencies.
+              </p>
+
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+                {["Matrix Spiral", "Subarrays", "Dict Math", "Slicing"].map((t) => (
+                  <span
+                    key={t}
+                    style={{
+                      fontSize: 11,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      background: "var(--bg-elevated)",
+                      color: "var(--text-muted)",
+                      border: "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/problems?lang=python"
+              className="btn btn-primary"
+              style={{ width: "100%", textAlign: "center", padding: "10px 16px" }}
+            >
+              Practice Python →
+            </Link>
+          </div>
+
           {/* JavaScript Card */}
           <div
             className="glass-card"
             style={{
-              padding: 28,
+              padding: 24,
               border: "1px solid rgba(245, 158, 11, 0.25)",
               background: "linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 15, 25, 0.8) 100%)",
               borderRadius: 16,
@@ -324,15 +395,15 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
                 JavaScript Track
               </h3>
               <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
-                Fullstack-friendly algorithmic practice. Master functional array methods, hash maps, queues, and asynchronous event loops.
+                Modern ES6+ algorithms. Recursive JSON object flattening, sliding windows, and Set-based lookup tables.
               </p>
 
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
-                {["Array Methods", "ES6 Map/Set", "String Parsing", "Math"].map((t) => (
+                {["Deep Flatten", "Sliding Window", "ES6 Set", "JSON Parse"].map((t) => (
                   <span
                     key={t}
                     style={{

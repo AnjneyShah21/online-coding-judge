@@ -42,6 +42,12 @@ function getLanguageConfig(language: string) {
         compile: ["g++", "-O2", "-std=c++17", "-o", "solution", "solution.cpp"],
         run: ["./solution"],
       };
+    case "java":
+      return {
+        fileName: "Solution.java",
+        compile: ["javac", "Solution.java"],
+        run: ["java", "Solution"],
+      };
     case "javascript":
       return {
         fileName: "solution.js",
