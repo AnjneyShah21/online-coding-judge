@@ -51,6 +51,18 @@ export default function UserNav() {
           Problems
         </Link>
         <Link
+          href="/contests"
+          className={pathname?.startsWith("/contests") ? "active" : ""}
+        >
+          🏆 Contests
+        </Link>
+        <Link
+          href="/dashboard"
+          className={pathname === "/dashboard" ? "active" : ""}
+        >
+          📈 Dashboard
+        </Link>
+        <Link
           href="/submissions"
           className={pathname === "/submissions" ? "active" : ""}
         >

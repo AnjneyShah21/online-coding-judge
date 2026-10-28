@@ -51,6 +51,9 @@ export async function requireAuth(
   if (!session || !session.user) {
     throw new Error("Unauthorized");
   }
+  if (session.user.is_banned) {
+    throw new Error(`Account Banned: ${session.user.ban_reason || "Suspended for platform integrity violation"}`);
+  }
   if (role && session.role !== role) {
     throw new Error("Forbidden");
   }

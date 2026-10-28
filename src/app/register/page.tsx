@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import GoogleAuthButton from "@/components/GoogleAuthButton";
+
 export default function RegisterPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -59,6 +61,12 @@ export default function RegisterPage() {
         <p className="auth-subtitle">Join developers solving algorithmic challenges</p>
 
         {error && <div className="error-message">{error}</div>}
+
+        <div style={{ marginBottom: 20 }}>
+          <GoogleAuthButton portal="user" mode="register" />
+        </div>
+
+        <div className="form-divider">or register with email</div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

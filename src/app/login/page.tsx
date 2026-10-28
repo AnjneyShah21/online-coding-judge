@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,9 +53,15 @@ export default function LoginPage() {
           </Link>
         </div>
         <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Sign in to continue coding</p>
+        <p className="auth-subtitle">Sign in to start practicing & solve problems</p>
 
         {error && <div className="error-message">{error}</div>}
+
+        <div style={{ marginBottom: 20 }}>
+          <GoogleAuthButton portal="user" mode="login" />
+        </div>
+
+        <div className="form-divider">or sign in with email</div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

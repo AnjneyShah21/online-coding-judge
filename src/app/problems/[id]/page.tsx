@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import UserNav from "@/components/UserNav";
@@ -61,12 +62,8 @@ const DEFAULT_STARTERS: Record<string, string> = {
   javascript: `const fs = require('fs');\n\nfunction main() {\n    const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);\n    if (!input || input.length === 0) return;\n    \n    // Write your solution here\n}\n\nmain();\n`,
 };
 
-export default function ProblemSolverPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function ProblemSolverContent() {
+  const { id } = useParams<{ id: string }>();
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -82,6 +79,7 @@ export default function ProblemSolverPage({
   const [currentSubmission, setCurrentSubmission] = useState<SubmissionDetails | null>(null);
   const [submissionResults, setSubmissionResults] = useState<SubmissionResult[]>([]);
   const [pastSubmissions, setPastSubmissions] = useState<SubmissionDetails[]>([]);
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
 
   // AI Hints & Review state
   const [hintLevel, setHintLevel] = useState<number>(1);
@@ -108,7 +106,32 @@ export default function ProblemSolverPage({
       .catch(() => setLoading(false));
 
     fetchPastSubmissions();
+
+    if (id) {
+      fetch(`/api/bookmarks?problem_id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && typeof data.bookmarked === "boolean") {
+            setIsBookmarked(data.bookmarked);
+          }
+        })
+        .catch(() => {});
+    }
   }, [id]);
+
+  const handleToggleBookmark = async () => {
+    const nextState = !isBookmarked;
+    setIsBookmarked(nextState);
+    try {
+      await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ problem_id: id }),
+      });
+    } catch {
+      setIsBookmarked(!nextState);
+    }
+  };
 
   const fetchPastSubmissions = () => {
     fetch("/api/submissions")
@@ -327,6 +350,24 @@ export default function ProblemSolverPage({
                 <span className={`badge badge-${problem.difficulty}`}>
                   {problem.difficulty}
                 </span>
+
+                <button
+                  onClick={handleToggleBookmark}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    marginLeft: "auto",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "4px 10px",
+                    color: isBookmarked ? "#fbbf24" : "var(--text-muted)",
+                    borderColor: isBookmarked ? "rgba(251, 191, 36, 0.4)" : "var(--border-subtle)",
+                  }}
+                  title={isBookmarked ? "Bookmarked (Click to remove)" : "Bookmark this question"}
+                >
+                  <span style={{ fontSize: 16 }}>{isBookmarked ? "★" : "☆"}</span>
+                  <span style={{ fontSize: 12 }}>{isBookmarked ? "Bookmarked" : "Bookmark"}</span>
+                </button>
               </div>
 
               <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
@@ -819,5 +860,19 @@ export default function ProblemSolverPage({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProblemSolverPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="spinner spinner-lg" />
+        </div>
+      }
+    >
+      <ProblemSolverContent />
+    </Suspense>
   );
 }

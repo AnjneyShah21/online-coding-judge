@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/AdminSidebar";
 
@@ -31,12 +31,8 @@ interface AITestCase {
   expected_output: string;
 }
 
-export default function EditProblemPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function EditProblemContent() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -646,5 +642,19 @@ export default function EditProblemPage({
         )}
       </main>
     </div>
+  );
+}
+
+export default function EditProblemPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="spinner spinner-lg" />
+        </div>
+      }
+    >
+      <EditProblemContent />
+    </Suspense>
   );
 }

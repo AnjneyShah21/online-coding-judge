@@ -19,6 +19,8 @@ export default function AdminSidebar() {
     { label: "Dashboard", href: "/admin", icon: "📊" },
     { label: "Problems", href: "/admin/problems", icon: "📝" },
     { label: "New Problem", href: "/admin/problems/new", icon: "➕" },
+    { label: "Weekly Contests", href: "/admin/contests", icon: "🏆" },
+    { label: "Player Moderation", href: "/admin/users", icon: "🛡️" },
     { label: "All Submissions", href: "/admin/submissions", icon: "⚡" },
   ];
 

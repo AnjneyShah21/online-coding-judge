@@ -85,11 +85,67 @@ function initializeDb(db: Database.Database) {
       FOREIGN KEY (test_case_id) REFERENCES test_cases(id)
     );
 
+    CREATE TABLE IF NOT EXISTS bookmarks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      problem_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, problem_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS contests (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      is_published INTEGER NOT NULL DEFAULT 0,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS contest_problems (
+      id TEXT PRIMARY KEY,
+      contest_id TEXT NOT NULL,
+      problem_id TEXT NOT NULL,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      score INTEGER NOT NULL DEFAULT 100,
+      UNIQUE(contest_id, problem_id),
+      FOREIGN KEY (contest_id) REFERENCES contests(id) ON DELETE CASCADE,
+      FOREIGN KEY (problem_id) REFERENCES problems(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS contest_participants (
+      id TEXT PRIMARY KEY,
+      contest_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      registered_at TEXT NOT NULL DEFAULT (datetime('now')),
+      score INTEGER NOT NULL DEFAULT 0,
+      penalty_seconds INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(contest_id, user_id),
+      FOREIGN KEY (contest_id) REFERENCES contests(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_submissions_user ON submissions(user_id);
     CREATE INDEX IF NOT EXISTS idx_submissions_problem ON submissions(problem_id);
     CREATE INDEX IF NOT EXISTS idx_test_cases_problem ON test_cases(problem_id);
     CREATE INDEX IF NOT EXISTS idx_submission_results_submission ON submission_results(submission_id);
+    CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id);
+    CREATE INDEX IF NOT EXISTS idx_contests_time ON contests(start_time, end_time);
   `);
+
+  // Safe runtime migrations for existing databases
+  try { db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0;"); } catch {}
+  try { db.exec("ALTER TABLE users ADD COLUMN ban_reason TEXT;"); } catch {}
+  try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT;"); } catch {}
+  try { db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;"); } catch {}
+  try { db.exec("ALTER TABLE problems ADD COLUMN target_languages TEXT DEFAULT '[\"python\",\"cpp\",\"javascript\"]';"); } catch {}
+
 
   // Seed default admin if none exists
   let adminId = "";
@@ -264,11 +320,12 @@ export function createProblem(data: {
   memory_limit_mb: number;
   tags: string;
   starter_code: string;
+  target_languages?: string;
   created_by: string;
 }) {
   return getDb()
     .prepare(
-      `INSERT INTO problems (id, title, slug, description, difficulty, time_limit_ms, memory_limit_mb, tags, starter_code, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO problems (id, title, slug, description, difficulty, time_limit_ms, memory_limit_mb, tags, starter_code, target_languages, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       data.id,
@@ -280,6 +337,7 @@ export function createProblem(data: {
       data.memory_limit_mb,
       data.tags,
       data.starter_code,
+      data.target_languages || '["python","cpp","javascript"]',
       data.created_by
     );
 }
@@ -568,6 +626,10 @@ export interface UserRow {
   password: string;
   role: "admin" | "user";
   display_name: string;
+  is_banned?: number;
+  ban_reason?: string | null;
+  google_id?: string | null;
+  avatar_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -582,6 +644,7 @@ export interface ProblemRow {
   memory_limit_mb: number;
   tags: string;
   starter_code: string;
+  target_languages?: string;
   is_published: number;
   created_by: string;
   created_at: string;
@@ -628,4 +691,391 @@ export interface LeaderboardRow {
   display_name: string;
   solved_count: number;
   total_submissions: number;
+  avatar_url?: string | null;
+  is_banned?: number;
+}
+
+export interface ContestRow {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  is_published: number;
+  created_by: string;
+  created_at: string;
+  problem_count?: number;
+  participant_count?: number;
+}
+
+export interface ContestProblemRow {
+  id: string;
+  contest_id: string;
+  problem_id: string;
+  order_index: number;
+  score: number;
+  title?: string;
+  difficulty?: string;
+}
+
+// ─── Google Auth & User Management ────────────────────────
+export function findOrCreateGoogleUser(data: {
+  email: string;
+  google_id: string;
+  display_name: string;
+  avatar_url?: string;
+  role?: "admin" | "user";
+}) {
+  const db = getDb();
+  let user = db.prepare("SELECT * FROM users WHERE email = ?").get(data.email) as UserRow | undefined;
+  
+  if (user) {
+    // Update google_id and avatar if missing
+    db.prepare("UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?), updated_at = datetime('now') WHERE id = ?")
+      .run(data.google_id, data.avatar_url || null, user.id);
+    return db.prepare("SELECT * FROM users WHERE id = ?").get(user.id) as UserRow;
+  }
+
+  // Create new user with username derived from email
+  const baseUsername = data.email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "").slice(0, 15) || "coder";
+  let uniqueUsername = baseUsername;
+  let counter = 1;
+  while (db.prepare("SELECT id FROM users WHERE username = ?").get(uniqueUsername)) {
+    uniqueUsername = `${baseUsername}${counter++}`;
+  }
+
+  const { v4: uuidv4 } = require("uuid");
+  const id = uuidv4();
+  db.prepare(`
+    INSERT INTO users (id, email, username, password, role, display_name, google_id, avatar_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.email,
+    uniqueUsername,
+    hashSync(uuidv4(), 10), // Random hashed password for OAuth accounts
+    data.role || "user",
+    data.display_name,
+    data.google_id,
+    data.avatar_url || null
+  );
+
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(id) as UserRow;
+}
+
+// ─── Ban & Moderation Helpers ─────────────────────────────
+export function banUser(userId: string, reason: string) {
+  return getDb().prepare("UPDATE users SET is_banned = 1, ban_reason = ?, updated_at = datetime('now') WHERE id = ?").run(reason, userId);
+}
+
+export function unbanUser(userId: string) {
+  return getDb().prepare("UPDATE users SET is_banned = 0, ban_reason = NULL, updated_at = datetime('now') WHERE id = ?").run(userId);
+}
+
+export function getAllUsersWithStats() {
+  const db = getDb();
+  return db.prepare(`
+    SELECT 
+      u.id, u.email, u.username, u.display_name, u.role, u.is_banned, u.ban_reason, u.avatar_url, u.created_at,
+      COUNT(s.id) as total_submissions,
+      COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN s.problem_id END) as solved_count,
+      COUNT(CASE WHEN s.verdict = 'accepted' THEN 1 END) as accepted_submissions
+    FROM users u
+    LEFT JOIN submissions s ON u.id = s.user_id
+    GROUP BY u.id
+    ORDER BY u.created_at DESC
+  `).all() as (UserRow & { total_submissions: number; solved_count: number; accepted_submissions: number })[];
+}
+
+// ─── Bookmark Helpers ─────────────────────────────────────
+export function toggleBookmark(userId: string, problemId: string): { bookmarked: boolean } {
+  const db = getDb();
+  const existing = db.prepare("SELECT id FROM bookmarks WHERE user_id = ? AND problem_id = ?").get(userId, problemId);
+  if (existing) {
+    db.prepare("DELETE FROM bookmarks WHERE user_id = ? AND problem_id = ?").run(userId, problemId);
+    return { bookmarked: false };
+  } else {
+    const { v4: uuidv4 } = require("uuid");
+    db.prepare("INSERT INTO bookmarks (id, user_id, problem_id) VALUES (?, ?, ?)").run(uuidv4(), userId, problemId);
+    return { bookmarked: true };
+  }
+}
+
+export function getUserBookmarks(userId: string) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT b.id as bookmark_id, b.created_at as bookmarked_at, p.*
+    FROM bookmarks b
+    JOIN problems p ON b.problem_id = p.id
+    WHERE b.user_id = ?
+    ORDER BY b.created_at DESC
+  `).all(userId) as (ProblemRow & { bookmark_id: string; bookmarked_at: string })[];
+}
+
+export function isProblemBookmarked(userId: string, problemId: string): boolean {
+  const row = getDb().prepare("SELECT id FROM bookmarks WHERE user_id = ? AND problem_id = ?").get(userId, problemId);
+  return !!row;
+}
+
+// ─── LeetCode-Style Progress & Activity Heatmap ────────────
+export function getUserProgressStats(userId: string) {
+  const db = getDb();
+
+  // Activity heatmap for the past 365 days
+  const activityRows = db.prepare(`
+    SELECT 
+      strftime('%Y-%m-%d', created_at) as date,
+      COUNT(id) as count,
+      COUNT(CASE WHEN verdict = 'accepted' THEN 1 END) as accepted_count
+    FROM submissions
+    WHERE user_id = ? AND created_at >= datetime('now', '-365 days')
+    GROUP BY strftime('%Y-%m-%d', created_at)
+    ORDER BY date ASC
+  `).all(userId) as { date: string; count: number; accepted_count: number }[];
+
+  const activityMap: Record<string, { count: number; accepted: number }> = {};
+  for (const r of activityRows) {
+    activityMap[r.date] = { count: r.count, accepted: r.accepted_count };
+  }
+
+  // Calculate current streak and longest streak
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 0;
+
+  const today = new Date();
+  let checkDate = new Date();
+
+  // Check today or yesterday for active current streak
+  const todayStr = checkDate.toISOString().split("T")[0];
+  checkDate.setDate(checkDate.getDate() - 1);
+  const yestStr = checkDate.toISOString().split("T")[0];
+
+  const hasActivityToday = !!activityMap[todayStr];
+  const hasActivityYesterday = !!activityMap[yestStr];
+
+  if (hasActivityToday || hasActivityYesterday) {
+    let curr = hasActivityToday ? new Date() : checkDate;
+    while (true) {
+      const dStr = curr.toISOString().split("T")[0];
+      if (activityMap[dStr]) {
+        currentStreak++;
+        curr.setDate(curr.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Longest streak over past year
+  for (let i = 365; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dStr = d.toISOString().split("T")[0];
+    if (activityMap[dStr]) {
+      tempStreak++;
+      if (tempStreak > longestStreak) longestStreak = tempStreak;
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  // Solved breakdown by difficulty
+  const solvedByDiff = db.prepare(`
+    SELECT p.difficulty, COUNT(DISTINCT s.problem_id) as count
+    FROM submissions s
+    JOIN problems p ON s.problem_id = p.id
+    WHERE s.user_id = ? AND s.verdict = 'accepted'
+    GROUP BY p.difficulty
+  `).all(userId) as { difficulty: string; count: number }[];
+
+  const totalProblemsByDiff = db.prepare(`
+    SELECT difficulty, COUNT(id) as count
+    FROM problems
+    WHERE is_published = 1
+    GROUP BY difficulty
+  `).all() as { difficulty: string; count: number }[];
+
+  const solvedStats = {
+    easy: { solved: 0, total: 0 },
+    medium: { solved: 0, total: 0 },
+    hard: { solved: 0, total: 0 },
+    totalSolved: 0,
+    totalProblems: 0,
+  };
+
+  for (const t of totalProblemsByDiff) {
+    if (t.difficulty === "easy") solvedStats.easy.total = t.count;
+    if (t.difficulty === "medium") solvedStats.medium.total = t.count;
+    if (t.difficulty === "hard") solvedStats.hard.total = t.count;
+    solvedStats.totalProblems += t.count;
+  }
+
+  for (const s of solvedByDiff) {
+    if (s.difficulty === "easy") solvedStats.easy.solved = s.count;
+    if (s.difficulty === "medium") solvedStats.medium.solved = s.count;
+    if (s.difficulty === "hard") solvedStats.hard.solved = s.count;
+    solvedStats.totalSolved += s.count;
+  }
+
+  // Language Breakdown
+  const languageStats = db.prepare(`
+    SELECT language, COUNT(DISTINCT problem_id) as count
+    FROM submissions
+    WHERE user_id = ? AND verdict = 'accepted'
+    GROUP BY language
+  `).all(userId) as { language: string; count: number }[];
+
+  const languageBreakdown: Record<string, number> = {
+    python: 0,
+    cpp: 0,
+    javascript: 0,
+  };
+  for (const l of languageStats) {
+    languageBreakdown[l.language] = l.count;
+  }
+
+  // Total submissions and acceptance rate
+  const subStats = db.prepare(`
+    SELECT 
+      COUNT(id) as total,
+      COUNT(CASE WHEN verdict = 'accepted' THEN 1 END) as accepted
+    FROM submissions
+    WHERE user_id = ?
+  `).get(userId) as { total: number; accepted: number };
+
+  const acceptanceRate = subStats.total > 0 ? Math.round((subStats.accepted / subStats.total) * 100) : 0;
+
+  return {
+    activity: activityRows,
+    currentStreak,
+    longestStreak,
+    activeDays: activityRows.length,
+    solvedStats,
+    languageBreakdown,
+    totalSubmissions: subStats.total,
+    acceptedSubmissions: subStats.accepted,
+    acceptanceRate,
+  };
+}
+
+// ─── Weekly Contests Helpers ──────────────────────────────
+export function getAllContests(includeUnpublished = false) {
+  const db = getDb();
+  const where = includeUnpublished ? "" : "WHERE c.is_published = 1";
+  return db.prepare(`
+    SELECT 
+      c.*,
+      COUNT(DISTINCT cp.problem_id) as problem_count,
+      COUNT(DISTINCT part.user_id) as participant_count
+    FROM contests c
+    LEFT JOIN contest_problems cp ON c.id = cp.contest_id
+    LEFT JOIN contest_participants part ON c.id = part.contest_id
+    ${where}
+    GROUP BY c.id
+    ORDER BY c.start_time DESC
+  `).all() as ContestRow[];
+}
+
+export function getContestById(id: string) {
+  const db = getDb();
+  return db.prepare(`
+    SELECT 
+      c.*,
+      COUNT(DISTINCT cp.problem_id) as problem_count,
+      COUNT(DISTINCT part.user_id) as participant_count
+    FROM contests c
+    LEFT JOIN contest_problems cp ON c.id = cp.contest_id
+    LEFT JOIN contest_participants part ON c.id = part.contest_id
+    WHERE c.id = ?
+    GROUP BY c.id
+  `).get(id) as ContestRow | undefined;
+}
+
+export function createContest(data: {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  created_by: string;
+}) {
+  return getDb().prepare(`
+    INSERT INTO contests (id, title, slug, description, start_time, end_time, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(data.id, data.title, data.slug, data.description, data.start_time, data.end_time, data.created_by);
+}
+
+export function updateContest(id: string, data: Partial<{
+  title: string;
+  description: string;
+  start_time: string;
+  end_time: string;
+  is_published: number;
+}>) {
+  const fields = Object.keys(data).map(k => `${k} = ?`).join(", ");
+  const values = Object.values(data);
+  return getDb().prepare(`UPDATE contests SET ${fields} WHERE id = ?`).run(...values, id);
+}
+
+export function deleteContest(id: string) {
+  return getDb().prepare("DELETE FROM contests WHERE id = ?").run(id);
+}
+
+export function getContestProblems(contestId: string) {
+  return getDb().prepare(`
+    SELECT cp.*, p.title, p.difficulty, p.slug
+    FROM contest_problems cp
+    JOIN problems p ON cp.problem_id = p.id
+    WHERE cp.contest_id = ?
+    ORDER BY cp.order_index ASC
+  `).all(contestId) as (ContestProblemRow & { title: string; difficulty: string; slug: string })[];
+}
+
+export function addProblemToContest(contestId: string, problemId: string, score: number, orderIndex: number) {
+  const { v4: uuidv4 } = require("uuid");
+  return getDb().prepare(`
+    INSERT INTO contest_problems (id, contest_id, problem_id, score, order_index)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(contest_id, problem_id) DO UPDATE SET score = excluded.score, order_index = excluded.order_index
+  `).run(uuidv4(), contestId, problemId, score, orderIndex);
+}
+
+export function removeProblemFromContest(contestId: string, problemId: string) {
+  return getDb().prepare("DELETE FROM contest_problems WHERE contest_id = ? AND problem_id = ?").run(contestId, problemId);
+}
+
+export function registerForContest(contestId: string, userId: string) {
+  const { v4: uuidv4 } = require("uuid");
+  return getDb().prepare(`
+    INSERT OR IGNORE INTO contest_participants (id, contest_id, user_id)
+    VALUES (?, ?, ?)
+  `).run(uuidv4(), contestId, userId);
+}
+
+export function isUserRegisteredForContest(contestId: string, userId: string): boolean {
+  const row = getDb().prepare("SELECT id FROM contest_participants WHERE contest_id = ? AND user_id = ?").get(contestId, userId);
+  return !!row;
+}
+
+export function getContestLeaderboard(contestId: string) {
+  return getDb().prepare(`
+    SELECT 
+      u.id as user_id, u.username, u.display_name, u.avatar_url,
+      cp.score, cp.penalty_seconds, cp.registered_at
+    FROM contest_participants cp
+    JOIN users u ON cp.user_id = u.id
+    WHERE cp.contest_id = ? AND u.is_banned = 0
+    ORDER BY cp.score DESC, cp.penalty_seconds ASC
+  `).all(contestId) as Array<{
+    user_id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string | null;
+    score: number;
+    penalty_seconds: number;
+    registered_at: string;
+  }>;
 }

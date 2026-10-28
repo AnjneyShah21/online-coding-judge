@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -87,6 +88,12 @@ export default function AdminLoginPage() {
         </div>
 
         {error && <div className="error-message">{error}</div>}
+
+        <div style={{ marginBottom: 18 }}>
+          <GoogleAuthButton portal="admin" mode="login" />
+        </div>
+
+        <div className="form-divider" style={{ color: "#d8b4fe" }}>or enter admin credentials</div>
 
         <div
           style={{
